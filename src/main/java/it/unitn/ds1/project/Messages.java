@@ -1,5 +1,6 @@
 package it.unitn.ds1.project;
 
+import akka.actor.ActorRef;
 import scala.Int;
 
 import java.io.Serializable;
@@ -8,8 +9,29 @@ import java.util.Map;
 
 public class Messages {
 
+    public static class Start implements Serializable {
+        public final List<ActorRef> replicas;
+        public final int masterId;
+        public final int initialValue;
+
+        public Start(List<ActorRef> replicas, int masterId, int initialValue) {
+            this.replicas = replicas;
+            this.masterId = masterId;
+            this.initialValue = initialValue;
+        }
+
+        @Override
+        public String toString() {
+            return "Start{" +
+                    "replicas=" + replicas +
+                    ", masterId=" + masterId +
+                    ", initialValue=" + initialValue +
+                    '}';
+        }
+    }
+
     public static class ClientUpdate implements Serializable {
-        final int value;
+        public final int value;
 
         public ClientUpdate(int value) {
             this.value = value;
@@ -24,7 +46,7 @@ public class Messages {
     }
 
     public static class ReplicaUpdate implements Serializable {
-        final int value;
+        public final int value;
 
         public ReplicaUpdate(int value) {
             this.value = value;
@@ -39,9 +61,9 @@ public class Messages {
     }
 
     public static class MasterUpdate implements Serializable {
-        final int value;
+        public final int value;
 
-        final Timestamp timestamp;
+        public final Timestamp timestamp;
 
         public MasterUpdate(int value, Timestamp timestamp) {
             this.value = value;
@@ -57,7 +79,7 @@ public class Messages {
     }
 
     public static class ReplicaUpdateAck implements Serializable {
-        final Timestamp timestamp;
+        public final Timestamp timestamp;
 
         public ReplicaUpdateAck(Timestamp timestamp) {
             this.timestamp = timestamp;
@@ -72,7 +94,7 @@ public class Messages {
     }
 
     public static class MasterUpdateOk implements Serializable {
-        final Timestamp timestamp;
+        public final Timestamp timestamp;
 
         public MasterUpdateOk(Timestamp timestamp) {
             this.timestamp = timestamp;
@@ -94,9 +116,9 @@ public class Messages {
     }
 
     public static class ReplicaElection implements Serializable {
-        final Map<Int, List<Timestamp>> historyByNodeId;
+        public final Map<Integer, List<Timestamp>> historyByNodeId;
 
-        public ReplicaElection(Map<Int, List<Timestamp>> historyByNodeId) {
+        public ReplicaElection(Map<Integer, List<Timestamp>> historyByNodeId) {
             this.historyByNodeId = historyByNodeId;
         }
 
@@ -110,8 +132,8 @@ public class Messages {
     }
 
     public static class MasterSync implements Serializable {
-        final List<Timestamp> history;
-        final Int masterId;
+        public final List<Timestamp> history;
+        public final Int masterId;
 
         public MasterSync(List<Timestamp> history, Int masterId) {
             this.history = history;
@@ -142,7 +164,7 @@ public class Messages {
     }
 
     public static class ReplicaReadReply implements Serializable {
-        final int value;
+        public final int value;
 
         public ReplicaReadReply(int value) {
             this.value = value;

@@ -5,15 +5,33 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import it.unitn.ds1.project.Messages.*;
 
+import java.util.List;
+
 public class ReplicaActor extends AbstractActor {
 
-    static public Props props(ActorRef manager, boolean joining) {
-        return Props.create(ReplicaActor.class, ReplicaActor::new);
+    private final int id;
+
+    private int value;
+
+    private List<ActorRef> replicas;
+
+    private boolean iAmMaster;
+
+    private int masterId;
+
+    static public Props props(int id, boolean master) {
+        return Props.create(ReplicaActor.class, () -> new ReplicaActor(id, master));
+    }
+
+    public ReplicaActor(int id, boolean iAmMaster) {
+        this.id = id;
+        this.iAmMaster = iAmMaster;
     }
 
     @Override
     public Receive createReceive() {
         return receiveBuilder()
+                .match(Start.class, this::onStartMsg)
                 .match(ClientUpdate.class, this::onClientUpdateMsg)
                 .match(ReplicaUpdate.class, this::onReplicaUpdateMsg)
                 .match(MasterUpdate.class, this::onMasterUpdateMsg)
@@ -28,6 +46,11 @@ public class ReplicaActor extends AbstractActor {
                 .build();
     }
 
+    private void onStartMsg(Start msg) {
+        this.replicas = msg.replicas;
+        this.value = msg.initialValue;
+        this.value = msg.initialValue;
+    }
 
     private void onClientUpdateMsg(ClientUpdate msg) {
 

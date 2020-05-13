@@ -5,10 +5,18 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import it.unitn.ds1.project.Messages.*;
 
+import java.util.List;
+
 public class ClientActor extends AbstractActor {
 
-    static public Props props(ActorRef manager, boolean joining) {
-        return Props.create(ClientActor.class, ClientActor::new);
+    private final List<ActorRef> replicas;
+
+    static public Props props(List<ActorRef> replicas) {
+        return Props.create(ClientActor.class, () -> new ClientActor(replicas));
+    }
+
+    public ClientActor(List<ActorRef> replicas) {
+        this.replicas = replicas;
     }
 
     @Override
