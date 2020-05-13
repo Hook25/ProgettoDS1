@@ -3,6 +3,7 @@ package it.unitn.ds1.project.actors;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import it.unitn.ds1.project.Messages.*;
 
 public class ClientActor extends AbstractActor {
 
@@ -12,7 +13,12 @@ public class ClientActor extends AbstractActor {
 
     @Override
     public Receive createReceive() {
-        return null;
+        return receiveBuilder()
+                .match(ReplicaReadReply.class, this::onReplicaReadReplyMsg)
+                .build();
     }
 
+    private void onReplicaReadReplyMsg(ReplicaReadReply msg) {
+
+    }
 }
