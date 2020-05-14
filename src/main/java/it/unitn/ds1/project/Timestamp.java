@@ -10,12 +10,12 @@ public class Timestamp implements Comparable<Timestamp> {
     /**
      * referred as 'i' in the project document
      */
-    final int counter;
+    public final int counter;
 
     /**
      * referred as 'e' in the project document
      */
-    final int epoch;
+    public final int epoch;
 
     public Timestamp(int counter, int epoch) {
         this.counter = counter;

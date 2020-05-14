@@ -16,15 +16,10 @@ public class Main {
         final ActorSystem system = ActorSystem.create("quorumTotalOrder");
 
         List<ActorRef> replicas = new ArrayList<>();
-
-        ActorRef initialMaster = system.actorOf(ReplicaActor.props(0, true));
-        replicas.add(initialMaster);
-
-        for (int i = 1; i < N_REPLICAS; i++) {
-            ActorRef replicaI = system.actorOf(ReplicaActor.props(i, false));
+        for (int i = 0; i < N_REPLICAS; i++) {
+            ActorRef replicaI = system.actorOf(ReplicaActor.props(i));
             replicas.add(replicaI);
         }
-
 
         Messages.Start startMessage = new Messages.Start(replicas, 0, 0);
         for (ActorRef replica : replicas) {

@@ -15,17 +15,14 @@ public class ReplicaActor extends AbstractActor {
 
     private List<ActorRef> replicas;
 
-    private boolean iAmMaster;
-
     private int masterId;
 
-    static public Props props(int id, boolean master) {
-        return Props.create(ReplicaActor.class, () -> new ReplicaActor(id, master));
+    static public Props props(int id) {
+        return Props.create(ReplicaActor.class, () -> new ReplicaActor(id));
     }
 
-    public ReplicaActor(int id, boolean iAmMaster) {
+    public ReplicaActor(int id) {
         this.id = id;
-        this.iAmMaster = iAmMaster;
     }
 
     @Override
@@ -48,7 +45,6 @@ public class ReplicaActor extends AbstractActor {
 
     private void onStartMsg(Start msg) {
         this.replicas = msg.replicas;
-        this.value = msg.initialValue;
         this.value = msg.initialValue;
     }
 
@@ -96,5 +92,8 @@ public class ReplicaActor extends AbstractActor {
 
     }
 
+    private boolean amIMaster() {
+        return id == masterId;
+    }
 
 }
