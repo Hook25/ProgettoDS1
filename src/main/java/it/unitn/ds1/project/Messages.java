@@ -194,4 +194,7 @@ public class Messages {
                     '}';
         }
     }
+
+    public static class HeartBeatReminder implements Serializable {
+    }
 }

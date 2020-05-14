@@ -62,7 +62,7 @@ public class MasterTimeoutManager {
         return system.scheduler().scheduleOnce(
                 Duration.create(time, TimeUnit.MILLISECONDS),
                 replica,
-                new Messages.MasterTimeout(), // the message to send
+                new Messages.MasterTimeout(),
                 system.dispatcher(),
                 replica
         );

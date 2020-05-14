@@ -3,15 +3,20 @@ package it.unitn.ds1.project.actors;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import it.unitn.ds1.project.MasterTimeoutManager;
+import it.unitn.ds1.project.Messages;
 import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.Timestamp;
+import scala.concurrent.duration.Duration;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class ReplicaActor extends ActorWithId {
+
+    private static final int HEART_BEAT = 5000;
 
     private int value;
 
@@ -60,6 +65,7 @@ public class ReplicaActor extends ActorWithId {
                 .match(ReplicaElectionAck.class, this::onReplicaElectionAckMsg)
                 .match(ClientRead.class, this::onClientReadMsg)
                 .match(MasterTimeout.class, this::onMasterTimeoutMsg)
+                .match(HeartBeatReminder.class, this::onMasterHeartBeatReminderMsg)
                 .build();
     }
 
@@ -67,6 +73,9 @@ public class ReplicaActor extends ActorWithId {
         this.replicas = msg.replicas;
         this.value = msg.initialValue;
         this.masterId = msg.masterId;
+        if(amIMaster()) {
+            startMasterHeartBeat();
+        }
     }
 
     private void onClientUpdateMsg(ClientUpdate msg) {
@@ -142,6 +151,21 @@ public class ReplicaActor extends ActorWithId {
         getSender().tell(new ReplicaReadReply(value), getSender());
     }
 
+    private void onMasterHeartBeatReminderMsg(HeartBeatReminder msg) {
+        tellBroadcast(new MasterHeartBeat());
+    }
+
+    private void startMasterHeartBeat(){
+        context().system().scheduler().scheduleAtFixedRate(
+                Duration.create(HEART_BEAT, TimeUnit.MILLISECONDS),
+                Duration.create(HEART_BEAT, TimeUnit.MILLISECONDS),
+                getSelf(),
+                new Messages.HeartBeatReminder(),
+                context().system().dispatcher(),
+                getSelf()
+        );
+    }
+
     private boolean amIMaster() {
         return id == masterId;
     }
@@ -163,6 +187,5 @@ public class ReplicaActor extends ActorWithId {
     private void logMessageIgnored(String reason) {
         log("ignored message: " + reason);
     }
-
 
 }
