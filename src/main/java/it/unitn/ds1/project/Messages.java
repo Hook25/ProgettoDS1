@@ -134,9 +134,9 @@ public class Messages {
 
     public static class MasterSync implements Serializable {
         public final List<Timestamp> history;
-        public final Int masterId;
+        public final int masterId;
 
-        public MasterSync(List<Timestamp> history, Int masterId) {
+        public MasterSync(List<Timestamp> history, int masterId) {
             this.history = history;
             this.masterId = masterId;
         }
