@@ -24,7 +24,7 @@ public class ReplicaActor extends AbstractActor {
 
     private static int HEARTBEAT_RATE_S = 200;
     private static int HEARTBEAT_TIMEOUT_T = 3; //timeout after HEARTBEAT_TIMEOUT_T * HEARTBEAT_RATE_S
-    private static int ELECTION_ACK_TIMEOUT_S = 6000;
+    private static int ELECTION_ACK_TIMEOUT_S = 400;
 
     private static Duration HEARTBEAT_RATE_D = Duration.ofMillis(HEARTBEAT_RATE_S);
     private static Duration HEARTBEAT_TIMEOUT_D = Duration.ofMillis(HEARTBEAT_RATE_S * HEARTBEAT_TIMEOUT_T);
@@ -176,8 +176,18 @@ public class ReplicaActor extends AbstractActor {
         }
 
     }
+    private void promoteToMaster(){
+        this.masterId = this.id;
+        this.inElection = false;
+        this.iAmMaster = true;
+    }
     private void pickLeader(Map<Integer, List<Timestamp>> lts){
-
+        if(this.id == 0){ //whatever policy
+            this.promoteToMaster();
+            for(ActorRef rep : this.replicas){
+                rep.tell(new MasterSync(this.history, this.id), getSelf());
+            }
+        }
     }
 
     private void onReplicaElectionMsg(ReplicaElection msg) {
@@ -193,7 +203,11 @@ public class ReplicaActor extends AbstractActor {
     }
 
     private void onMasterSyncMsg(MasterSync msg) {
-
+        if(!this.iAmMaster){
+            this.history = msg.history;
+            this.masterId = msg.masterId;
+        }
+        SetupHB();
     }
 
     private void onReplicaElectionAckMsg(ReplicaElectionAck msg) {
