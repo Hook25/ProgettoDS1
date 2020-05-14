@@ -39,13 +39,13 @@ public class ReplicaActor extends AbstractActor {
                 .match(MasterSync.class, this::onMasterSyncMsg)
                 .match(ReplicaElectionAck.class, this::onReplicaElectionAckMsg)
                 .match(ClientRead.class, this::onClientReadMsg)
-                .match(ReplicaReadReply.class, this::onReplicaReadReplyMsg)
                 .build();
     }
 
     private void onStartMsg(Start msg) {
         this.replicas = msg.replicas;
         this.value = msg.initialValue;
+        this.masterId = msg.masterId;
     }
 
     private void onClientUpdateMsg(ClientUpdate msg) {
@@ -85,15 +85,29 @@ public class ReplicaActor extends AbstractActor {
     }
 
     private void onClientReadMsg(ClientRead msg) {
-
+        getSender().tell(new ReplicaReadReply(value), getSender());
     }
-
-    private void onReplicaReadReplyMsg(ReplicaReadReply msg) {
-
-    }
-
     private boolean amIMaster() {
         return id == masterId;
+    }
+
+    private int getQuorum() {
+        return Math.floorDiv(replicas.size(), 2) + 1;
+    }
+
+
+    private void tellMaster(Object message) {
+        replicas.get(masterId).tell(message, getSelf());
+    }
+
+    private void tellBroadcast(Object message) {
+        for (ActorRef replica : replicas) {
+            replica.tell(message, getSelf());
+        }
+    }
+
+    private void logMessageIgnored(String reason) {
+        System.out.format("Replica %2d ignored message: %s\n", id, reason);
     }
 
 }

@@ -49,4 +49,8 @@ public class Timestamp implements Comparable<Timestamp> {
     public int compareTo(Timestamp o) {
         return COMPARATOR.compare(this, o);
     }
+
+    public Timestamp nextUpdate() {
+        return new Timestamp(counter + 1, epoch);
+    }
 }
