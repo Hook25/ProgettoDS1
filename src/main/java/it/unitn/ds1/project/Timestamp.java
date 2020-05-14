@@ -38,7 +38,7 @@ public class Timestamp implements Comparable<Timestamp> {
 
     @Override
     public String toString() {
-        return "<" + epoch + ", " + counter + ">";
+        return String.format("%d:%d", epoch, counter);
     }
 
     private static final Comparator<Timestamp> COMPARATOR =

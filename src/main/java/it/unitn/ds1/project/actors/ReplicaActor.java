@@ -1,8 +1,8 @@
 package it.unitn.ds1.project.actors;
 
-import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import it.unitn.ds1.project.MasterTimeoutManager;
 import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.Timestamp;
 
@@ -22,6 +22,10 @@ public class ReplicaActor extends ActorWithId {
     private final Map<Timestamp, Integer> updatesWaitingForOk = new HashMap<>();
 
     private final List<Timestamp> updateHistory = new ArrayList<>();
+
+    private final MasterTimeoutManager masterTimeoutManager = new MasterTimeoutManager(
+            getSelf(), getContext().system()
+    );
 
     /**
      * used only by the master
@@ -55,6 +59,7 @@ public class ReplicaActor extends ActorWithId {
                 .match(MasterSync.class, this::onMasterSyncMsg)
                 .match(ReplicaElectionAck.class, this::onReplicaElectionAckMsg)
                 .match(ClientRead.class, this::onClientReadMsg)
+                .match(MasterTimeout.class, this::onMasterTimeoutMsg)
                 .build();
     }
 
@@ -67,6 +72,7 @@ public class ReplicaActor extends ActorWithId {
     private void onClientUpdateMsg(ClientUpdate msg) {
         ReplicaUpdate forwardedMessage = ReplicaUpdate.fromClientUpdate(msg);
         tellMaster(forwardedMessage);
+        masterTimeoutManager.resetMasterUpdateMsgTimeout();
     }
 
     private void onReplicaUpdateMsg(ReplicaUpdate msg) {
@@ -80,8 +86,10 @@ public class ReplicaActor extends ActorWithId {
     }
 
     private void onMasterUpdateMsg(MasterUpdate msg) {
+        masterTimeoutManager.onMasterUpdateMsg();
         updatesWaitingForOk.put(msg.timestamp, msg.value);
         tellMaster(ReplicaUpdateAck.fromMasterUpdate(msg));
+        masterTimeoutManager.resetMasterUpdateOkMsgTimeout();
     }
 
     private void onReplicaUpdateAckMsg(ReplicaUpdateAck msg) {
@@ -99,17 +107,23 @@ public class ReplicaActor extends ActorWithId {
     }
 
     private void onMasterUpdateOkMsg(MasterUpdateOk msg) {
+        masterTimeoutManager.onMasterUpdateOkMsg();
         if (!updatesWaitingForOk.containsKey(msg.timestamp)) {
             logMessageIgnored("unknown update with timestamp " + msg.timestamp);
             return;
         }
         value = updatesWaitingForOk.remove(msg.timestamp);
         updateHistory.add(msg.timestamp);
-        System.out.format("Replica %2d update %d:%d %d\n", id, msg.timestamp.epoch, msg.timestamp.counter, value);
+        log("update " + msg.timestamp + " " + value);
+    }
+
+    private void onMasterTimeoutMsg(MasterTimeout msg) {
+        log("I think master has crashed");
+        // TODO: Start election
     }
 
     private void onMasterHeartBeatMsg(MasterHeartBeat msg) {
-
+        masterTimeoutManager.onMasterHeartBeatMsg();
     }
 
     private void onReplicaElectionMsg(ReplicaElection msg) {
@@ -136,7 +150,6 @@ public class ReplicaActor extends ActorWithId {
         return Math.floorDiv(replicas.size(), 2) + 1;
     }
 
-
     private void tellMaster(Object message) {
         replicas.get(masterId).tell(message, getSelf());
     }
@@ -150,5 +163,6 @@ public class ReplicaActor extends ActorWithId {
     private void logMessageIgnored(String reason) {
         log("ignored message: " + reason);
     }
+
 
 }

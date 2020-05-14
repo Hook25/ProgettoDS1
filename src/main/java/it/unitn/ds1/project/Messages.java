@@ -30,6 +30,10 @@ public class Messages {
         }
     }
 
+    public static class MasterTimeout implements Serializable {
+
+    }
+
     public static class ClientUpdate implements Serializable {
         public final int value;
 
