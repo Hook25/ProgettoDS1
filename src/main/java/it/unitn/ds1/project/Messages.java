@@ -48,8 +48,12 @@ public class Messages {
     public static class ReplicaUpdate implements Serializable {
         public final int value;
 
-        public ReplicaUpdate(int value) {
+        private ReplicaUpdate(int value) {
             this.value = value;
+        }
+
+        public static ReplicaUpdate fromClientUpdate(ClientUpdate msg) {
+            return new ReplicaUpdate(msg.value);
         }
 
         @Override
@@ -65,9 +69,13 @@ public class Messages {
 
         public final Timestamp timestamp;
 
-        public MasterUpdate(int value, Timestamp timestamp) {
+        private MasterUpdate(int value, Timestamp timestamp) {
             this.value = value;
             this.timestamp = timestamp;
+        }
+
+        public static Object fromReplicaUpdate(ReplicaUpdate msg, Timestamp t) {
+            return new MasterUpdate(msg.value, t);
         }
 
         @Override
@@ -81,8 +89,12 @@ public class Messages {
     public static class ReplicaUpdateAck implements Serializable {
         public final Timestamp timestamp;
 
-        public ReplicaUpdateAck(Timestamp timestamp) {
+        private ReplicaUpdateAck(Timestamp timestamp) {
             this.timestamp = timestamp;
+        }
+
+        public static ReplicaUpdateAck fromMasterUpdate(MasterUpdate msg) {
+            return new ReplicaUpdateAck(msg.timestamp);
         }
 
         @Override
@@ -94,6 +106,7 @@ public class Messages {
     }
 
     public static class MasterUpdateOk implements Serializable {
+
         public final Timestamp timestamp;
 
         public MasterUpdateOk(Timestamp timestamp) {
