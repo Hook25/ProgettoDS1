@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import scala.Int;
 
 import java.io.Serializable;
+import java.io.SerializablePermission;
 import java.util.List;
 import java.util.Map;
 
@@ -177,4 +178,23 @@ public class Messages {
                     '}';
         }
     }
+    public static class ReplicaCheckMasterDead implements Serializable {
+        @Override
+        public String toString(){
+            return "ReplicaCheckMasterDead{}";
+        }
+    }
+
+    public static class ReplicaNextDead implements Serializable{
+        public final Map<Integer, List<Timestamp>> partial;
+
+        public ReplicaNextDead(Map<Integer, List<Timestamp>> partial){
+            this.partial = partial;
+        }
+        @Override
+        public String toString() {
+            return "ReplicaNextDead{}";
+        }
+    }
+
 }

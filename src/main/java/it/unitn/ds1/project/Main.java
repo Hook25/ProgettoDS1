@@ -10,14 +10,14 @@ import java.util.List;
 
 public class Main {
 
-    private static int N_REPLICAS = 10;
+    private static int N_REPLICAS = 3;
 
     public static void main(String[] args) throws IOException {
         final ActorSystem system = ActorSystem.create("quorumTotalOrder");
 
         List<ActorRef> replicas = new ArrayList<>();
 
-        ActorRef initialMaster = system.actorOf(ReplicaActor.props(0, true));
+        ActorRef initialMaster = system.actorOf(ReplicaActor.props(0, false));
         replicas.add(initialMaster);
 
         for (int i = 1; i < N_REPLICAS; i++) {
