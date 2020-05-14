@@ -7,15 +7,16 @@ import it.unitn.ds1.project.Messages.*;
 
 import java.util.List;
 
-public class ClientActor extends AbstractActor {
+public class ClientActor extends ActorWithId {
 
     private final List<ActorRef> replicas;
 
-    static public Props props(List<ActorRef> replicas) {
-        return Props.create(ClientActor.class, () -> new ClientActor(replicas));
+    static public Props props(int id, List<ActorRef> replicas) {
+        return Props.create(ClientActor.class, () -> new ClientActor(id, replicas));
     }
 
-    public ClientActor(List<ActorRef> replicas) {
+    public ClientActor(int id, List<ActorRef> replicas) {
+        super("Client", id);
         this.replicas = replicas;
     }
 
@@ -27,6 +28,6 @@ public class ClientActor extends AbstractActor {
     }
 
     private void onReplicaReadReplyMsg(ReplicaReadReply msg) {
-
+        log("read done " + msg.value);
     }
 }

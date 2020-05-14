@@ -7,9 +7,7 @@ import it.unitn.ds1.project.Messages.*;
 
 import java.util.List;
 
-public class ReplicaActor extends AbstractActor {
-
-    private final int id;
+public class ReplicaActor extends ActorWithId {
 
     private int value;
 
@@ -22,7 +20,7 @@ public class ReplicaActor extends AbstractActor {
     }
 
     public ReplicaActor(int id) {
-        this.id = id;
+        super("Replica", id);
     }
 
     @Override
@@ -87,6 +85,7 @@ public class ReplicaActor extends AbstractActor {
     private void onClientReadMsg(ClientRead msg) {
         getSender().tell(new ReplicaReadReply(value), getSender());
     }
+
     private boolean amIMaster() {
         return id == masterId;
     }
@@ -107,7 +106,7 @@ public class ReplicaActor extends AbstractActor {
     }
 
     private void logMessageIgnored(String reason) {
-        System.out.format("Replica %2d ignored message: %s\n", id, reason);
+        log("ignored message: " + reason);
     }
 
 }
