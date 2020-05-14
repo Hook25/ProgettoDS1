@@ -2,6 +2,7 @@ package it.unitn.ds1.project;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import it.unitn.ds1.project.actors.ClientActor;
 import it.unitn.ds1.project.actors.ReplicaActor;
 
 import java.io.IOException;
@@ -25,6 +26,14 @@ public class Main {
         for (ActorRef replica : replicas) {
             replica.tell(startMessage, null);
         }
+
+
+        ActorRef client = system.actorOf(ClientActor.props(50, replicas));
+
+
+        replicas.get(0).tell(new Messages.ClientRead(), client);
+        replicas.get(0).tell(new Messages.ClientUpdate(5), client);
+        replicas.get(0).tell(new Messages.ClientRead(), client);
 
         System.out.println(">>> Press ENTER to exit <<<");
         System.in.read();
