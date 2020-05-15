@@ -5,7 +5,7 @@ import java.util.Objects;
 
 import static java.util.Comparator.comparingInt;
 
-public class Timestamp implements Comparable<Timestamp> {
+public class Timestamp implements Comparable<Timestamp>, Messages.MessageId {
 
     /**
      * referred as 'i' in the project document

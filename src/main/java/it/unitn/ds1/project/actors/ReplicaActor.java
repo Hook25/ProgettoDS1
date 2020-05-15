@@ -2,9 +2,9 @@ package it.unitn.ds1.project.actors;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import it.unitn.ds1.project.MasterTimeoutManager;
 import it.unitn.ds1.project.Messages;
 import it.unitn.ds1.project.Messages.*;
+import it.unitn.ds1.project.TimeoutManager;
 import it.unitn.ds1.project.Timestamp;
 import scala.concurrent.duration.Duration;
 
@@ -24,9 +24,7 @@ public class ReplicaActor extends ActorWithId {
 
     private final List<Timestamp> updateHistory = new ArrayList<>();
 
-    private final MasterTimeoutManager masterTimeoutManager = new MasterTimeoutManager(
-            getSelf(), getContext().system()
-    );
+    private final TimeoutManager timeoutManager = new TimeoutManager(getSelf(), getContext().system());
 
     private final TwoPhaseCommitDelegate twoPhaseCommitDelegate = new TwoPhaseCommitDelegate(this);
 
@@ -92,7 +90,7 @@ public class ReplicaActor extends ActorWithId {
     }
 
     private void onMasterHeartBeatMsg(MasterHeartBeat msg) {
-        masterTimeoutManager.onMasterHeartBeatMsg();
+
     }
 
     private void onReplicaElectionMsg(ReplicaElection msg) {
@@ -144,8 +142,8 @@ public class ReplicaActor extends ActorWithId {
         log("ignored message: " + reason);
     }
 
-    MasterTimeoutManager getMasterTimeoutManager() {
-        return masterTimeoutManager;
+    TimeoutManager getTimeoutManager() {
+        return timeoutManager;
     }
 
     void setValue(int value) {

@@ -6,8 +6,29 @@ import scala.Int;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 public class Messages {
+
+    public static interface MessageId extends Serializable {}
+
+
+    public static abstract class AcknowledgeableMessage<T extends MessageId> implements Serializable {
+        public final T id;
+
+        public AcknowledgeableMessage(T id) {
+            this.id = id;
+        }
+    }
+
+    public static abstract class Ack<T extends MessageId> implements Serializable {
+        public final T acknowledgedId;
+
+        private Ack(T acknowledgedId) {
+            this.acknowledgedId = acknowledgedId;
+        }
+    }
 
     public static class Start implements Serializable {
         public final List<ActorRef> replicas;
@@ -49,10 +70,12 @@ public class Messages {
         }
     }
 
-    public static class ReplicaUpdate implements Serializable {
+    public static class ReplicaUpdate extends AcknowledgeableMessage<StringMessageId> implements Serializable {
+
         public final int value;
 
         private ReplicaUpdate(int value) {
+            super(new StringMessageId());
             this.value = value;
         }
 
@@ -68,18 +91,20 @@ public class Messages {
         }
     }
 
-    public static class MasterUpdate implements Serializable {
+    public static class MasterUpdate extends Ack<StringMessageId> implements Serializable {
+
         public final int value;
 
         public final Timestamp timestamp;
 
-        private MasterUpdate(int value, Timestamp timestamp) {
+        private MasterUpdate(StringMessageId acknowledgedId, int value, Timestamp timestamp) {
+            super(acknowledgedId);
             this.value = value;
             this.timestamp = timestamp;
         }
 
         public static Object fromReplicaUpdate(ReplicaUpdate msg, Timestamp t) {
-            return new MasterUpdate(msg.value, t);
+            return new MasterUpdate(msg.id, msg.value, t);
         }
 
         @Override
@@ -90,10 +115,11 @@ public class Messages {
         }
     }
 
-    public static class ReplicaUpdateAck implements Serializable {
+    public static class ReplicaUpdateAck extends AcknowledgeableMessage<Timestamp> implements Serializable {
         public final Timestamp timestamp;
 
         private ReplicaUpdateAck(Timestamp timestamp) {
+            super(timestamp);
             this.timestamp = timestamp;
         }
 
@@ -109,11 +135,12 @@ public class Messages {
         }
     }
 
-    public static class MasterUpdateOk implements Serializable {
+    public static class MasterUpdateOk extends Ack<Timestamp> implements Serializable {
 
         public final Timestamp timestamp;
 
         public MasterUpdateOk(Timestamp timestamp) {
+            super(timestamp);
             this.timestamp = timestamp;
         }
 
@@ -196,5 +223,22 @@ public class Messages {
     }
 
     public static class HeartBeatReminder implements Serializable {
+    }
+
+    public static class StringMessageId implements MessageId {
+        private final String value = UUID.randomUUID().toString();
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            StringMessageId that = (StringMessageId) o;
+            return value.equals(that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(value);
+        }
     }
 }
