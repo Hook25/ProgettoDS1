@@ -11,7 +11,8 @@ import java.util.UUID;
 
 public class Messages {
 
-    public static interface MessageId extends Serializable {}
+    public static interface MessageId extends Serializable {
+    }
 
 
     public static abstract class AcknowledgeableMessage<T extends MessageId> implements Serializable {
@@ -152,7 +153,11 @@ public class Messages {
         }
     }
 
-    public static class MasterHeartBeat implements Serializable {
+    public static class MasterHeartBeat extends Ack<StringMessageId> implements Serializable {
+        public MasterHeartBeat() {
+            super(StringMessageId.heartbeat());
+        }
+
         @Override
         public String toString() {
             return "MasterHeartBeat";
@@ -226,7 +231,19 @@ public class Messages {
     }
 
     public static class StringMessageId implements MessageId {
-        private final String value = UUID.randomUUID().toString();
+        private final String value;
+
+        public StringMessageId() {
+            value = UUID.randomUUID().toString();
+        }
+
+        public StringMessageId(String value) {
+            this.value = value;
+        }
+
+        public static StringMessageId heartbeat() {
+            return new StringMessageId("heartbeat");
+        }
 
         @Override
         public boolean equals(Object o) {

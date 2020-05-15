@@ -61,6 +61,8 @@ public class ReplicaActor extends ActorWithId {
         this.masterId = msg.masterId;
         if (amIMaster()) {
             startMasterHeartBeat();
+        } else {
+            setupTimeoutNextHeartBeat();
         }
     }
 
@@ -90,7 +92,12 @@ public class ReplicaActor extends ActorWithId {
     }
 
     private void onMasterHeartBeatMsg(MasterHeartBeat msg) {
+        timeoutManager.cancelTimeout(msg);
+        setupTimeoutNextHeartBeat();
+    }
 
+    private void setupTimeoutNextHeartBeat () {
+        timeoutManager.startTimeout(new AcknowledgeableMessage<MessageId>(StringMessageId.heartbeat()) {}, 10000, new MasterTimeout());
     }
 
     private void onReplicaElectionMsg(ReplicaElection msg) {
