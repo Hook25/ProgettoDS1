@@ -1,7 +1,6 @@
 package it.unitn.ds1.project;
 
 import akka.actor.ActorRef;
-import scala.Int;
 
 import java.io.Serializable;
 import java.util.List;
@@ -11,7 +10,7 @@ import java.util.UUID;
 
 public class Messages {
 
-    public static interface MessageId extends Serializable {
+    public interface MessageId extends Serializable {
     }
 
 
@@ -33,12 +32,10 @@ public class Messages {
 
     public static class Start implements Serializable {
         public final List<ActorRef> replicas;
-        public final int masterId;
         public final int initialValue;
 
-        public Start(List<ActorRef> replicas, int masterId, int initialValue) {
+        public Start(List<ActorRef> replicas, int initialValue) {
             this.replicas = replicas;
-            this.masterId = masterId;
             this.initialValue = initialValue;
         }
 
@@ -46,7 +43,6 @@ public class Messages {
         public String toString() {
             return "Start{" +
                     "replicas=" + replicas +
-                    ", masterId=" + masterId +
                     ", initialValue=" + initialValue +
                     '}';
         }
@@ -164,10 +160,11 @@ public class Messages {
         }
     }
 
-    public static class ReplicaElection implements Serializable {
+    public static class ReplicaElection extends AcknowledgeableMessage<StringMessageId> implements Serializable {
         public final Map<Integer, List<Timestamp>> historyByNodeId;
 
         public ReplicaElection(Map<Integer, List<Timestamp>> historyByNodeId) {
+            super(new StringMessageId());
             this.historyByNodeId = historyByNodeId;
         }
 
@@ -182,9 +179,9 @@ public class Messages {
 
     public static class MasterSync implements Serializable {
         public final List<Timestamp> history;
-        public final Int masterId;
+        public final int masterId;
 
-        public MasterSync(List<Timestamp> history, Int masterId) {
+        public MasterSync(List<Timestamp> history, int masterId) {
             this.history = history;
             this.masterId = masterId;
         }
@@ -198,7 +195,10 @@ public class Messages {
         }
     }
 
-    public static class ReplicaElectionAck implements Serializable {
+    public static class ReplicaElectionAck extends Ack<StringMessageId>  implements Serializable {
+        public  ReplicaElectionAck(StringMessageId id){
+            super(id);
+        }
         @Override
         public String toString() {
             return "ReplicaElectionAck";
@@ -256,6 +256,26 @@ public class Messages {
         @Override
         public int hashCode() {
             return Objects.hash(value);
+        }
+    }
+
+    public static class ReplicaCheckMasterDead implements Serializable {
+        @Override
+        public String toString(){
+            return "ReplicaCheckMasterDead{}";
+        }
+    }
+
+    public static class ReplicaNextDead extends AcknowledgeableMessage<StringMessageId> implements Serializable{
+        public final Map<Integer, List<Timestamp>> partial;
+
+        public ReplicaNextDead(Map<Integer, List<Timestamp>> partial){
+            super(new StringMessageId());
+            this.partial = partial;
+        }
+        @Override
+        public String toString() {
+            return "ReplicaNextDead{}";
         }
     }
 }

@@ -41,7 +41,7 @@ public class Timestamp implements Comparable<Timestamp>, Messages.MessageId {
         return String.format("%d:%d", epoch, counter);
     }
 
-    private static final Comparator<Timestamp> COMPARATOR =
+    public static final Comparator<Timestamp> COMPARATOR =
             comparingInt((Timestamp timestamp) -> timestamp.epoch)
                     .thenComparingInt(timestamp -> timestamp.counter);
 

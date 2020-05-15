@@ -11,7 +11,7 @@ import java.util.List;
 
 public class Main {
 
-    private static int N_REPLICAS = 10;
+    private static final int N_REPLICAS = 3;
 
     public static void main(String[] args) throws IOException {
         final ActorSystem system = ActorSystem.create("quorumTotalOrder");
@@ -22,7 +22,7 @@ public class Main {
             replicas.add(replicaI);
         }
 
-        Messages.Start startMessage = new Messages.Start(replicas, 0, 0);
+        Messages.Start startMessage = new Messages.Start(replicas, 0);
         for (ActorRef replica : replicas) {
             replica.tell(startMessage, null);
         }
