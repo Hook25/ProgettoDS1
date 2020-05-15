@@ -9,9 +9,7 @@ import it.unitn.ds1.project.Timestamp;
 import scala.concurrent.duration.Duration;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class ReplicaActor extends ActorWithId {
@@ -24,23 +22,13 @@ public class ReplicaActor extends ActorWithId {
 
     private int masterId;
 
-    private final Map<Timestamp, Integer> updatesWaitingForOk = new HashMap<>();
-
     private final List<Timestamp> updateHistory = new ArrayList<>();
 
     private final MasterTimeoutManager masterTimeoutManager = new MasterTimeoutManager(
             getSelf(), getContext().system()
     );
 
-    /**
-     * used only by the master
-     */
-    private final Map<Timestamp, Integer> acksCount = new HashMap<>();
-
-    /**
-     * used only by the master
-     */
-    private Timestamp latestTimestamp = new Timestamp(0, 0);
+    private final TwoPhaseCommitDelegate twoPhaseCommitDelegate = new TwoPhaseCommitDelegate(this);
 
     static public Props props(int id) {
         return Props.create(ReplicaActor.class, () -> new ReplicaActor(id));
@@ -73,57 +61,29 @@ public class ReplicaActor extends ActorWithId {
         this.replicas = msg.replicas;
         this.value = msg.initialValue;
         this.masterId = msg.masterId;
-        if(amIMaster()) {
+        if (amIMaster()) {
             startMasterHeartBeat();
         }
     }
 
-    private void onClientUpdateMsg(ClientUpdate msg) {
-        ReplicaUpdate forwardedMessage = ReplicaUpdate.fromClientUpdate(msg);
-        tellMaster(forwardedMessage);
-        masterTimeoutManager.resetMasterUpdateMsgTimeout();
+    private void onClientUpdateMsg(Messages.ClientUpdate msg) {
+        twoPhaseCommitDelegate.onClientUpdateMsg(msg);
     }
 
-    private void onReplicaUpdateMsg(ReplicaUpdate msg) {
-        if (!amIMaster()) {
-            logMessageIgnored("non-master replica shouldn't receive messages of type ReplicaUpdate");
-            return;
-        }
-        latestTimestamp = latestTimestamp.nextUpdate();
-        acksCount.put(latestTimestamp, 0);
-        tellBroadcast(MasterUpdate.fromReplicaUpdate(msg, latestTimestamp));
+    private void onReplicaUpdateMsg(Messages.ReplicaUpdate msg) {
+        twoPhaseCommitDelegate.onReplicaUpdateMsg(msg);
     }
 
-    private void onMasterUpdateMsg(MasterUpdate msg) {
-        masterTimeoutManager.onMasterUpdateMsg();
-        updatesWaitingForOk.put(msg.timestamp, msg.value);
-        tellMaster(ReplicaUpdateAck.fromMasterUpdate(msg));
-        masterTimeoutManager.resetMasterUpdateOkMsgTimeout();
+    private void onMasterUpdateMsg(Messages.MasterUpdate msg) {
+        twoPhaseCommitDelegate.onMasterUpdateMsg(msg);
     }
 
-    private void onReplicaUpdateAckMsg(ReplicaUpdateAck msg) {
-        if (!amIMaster()) {
-            logMessageIgnored("non-master replica shouldn't receive messages of type ReplicaUpdateAck");
-            return;
-        }
-        Timestamp timestamp = msg.timestamp;
-        int updatedCount = acksCount.merge(timestamp, 1, Integer::sum);
-        if (updatedCount > getQuorum()) {
-            log("quorum for message " + timestamp + " reached");
-            acksCount.remove(timestamp);
-            tellBroadcast(new MasterUpdateOk(timestamp));
-        }
+    private void onReplicaUpdateAckMsg(Messages.ReplicaUpdateAck msg) {
+        twoPhaseCommitDelegate.onReplicaUpdateAckMsg(msg);
     }
 
-    private void onMasterUpdateOkMsg(MasterUpdateOk msg) {
-        masterTimeoutManager.onMasterUpdateOkMsg();
-        if (!updatesWaitingForOk.containsKey(msg.timestamp)) {
-            logMessageIgnored("unknown update with timestamp " + msg.timestamp);
-            return;
-        }
-        value = updatesWaitingForOk.remove(msg.timestamp);
-        updateHistory.add(msg.timestamp);
-        log("update " + msg.timestamp + " " + value);
+    private void onMasterUpdateOkMsg(Messages.MasterUpdateOk msg) {
+        twoPhaseCommitDelegate.onMasterUpdateOkMsg(msg);
     }
 
     private void onMasterTimeoutMsg(MasterTimeout msg) {
@@ -155,7 +115,7 @@ public class ReplicaActor extends ActorWithId {
         tellBroadcast(new MasterHeartBeat());
     }
 
-    private void startMasterHeartBeat(){
+    private void startMasterHeartBeat() {
         context().system().scheduler().scheduleAtFixedRate(
                 Duration.create(HEART_BEAT, TimeUnit.MILLISECONDS),
                 Duration.create(HEART_BEAT, TimeUnit.MILLISECONDS),
@@ -166,26 +126,37 @@ public class ReplicaActor extends ActorWithId {
         );
     }
 
-    private boolean amIMaster() {
+    boolean amIMaster() {
         return id == masterId;
     }
 
-    private int getQuorum() {
-        return Math.floorDiv(replicas.size(), 2) + 1;
-    }
-
-    private void tellMaster(Object message) {
+    void tellMaster(Object message) {
         replicas.get(masterId).tell(message, getSelf());
     }
 
-    private void tellBroadcast(Object message) {
+    void tellBroadcast(Object message) {
         for (ActorRef replica : replicas) {
             replica.tell(message, getSelf());
         }
     }
 
-    private void logMessageIgnored(String reason) {
+    void logMessageIgnored(String reason) {
         log("ignored message: " + reason);
     }
 
+    MasterTimeoutManager getMasterTimeoutManager() {
+        return masterTimeoutManager;
+    }
+
+    void setValue(int value) {
+        this.value = value;
+    }
+
+    List<Timestamp> getUpdateHistory() {
+        return updateHistory;
+    }
+
+    public List<ActorRef> getReplicas() {
+        return replicas;
+    }
 }
