@@ -7,6 +7,7 @@ import scala.concurrent.duration.Duration;
 
 import java.util.concurrent.TimeUnit;
 
+@Deprecated
 public class MasterTimeoutManager {
 
     private static final int MASTER_UPDATE_TIMEOUT = 1000;
