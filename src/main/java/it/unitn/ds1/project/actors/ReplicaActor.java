@@ -73,6 +73,7 @@ public class ReplicaActor extends ActorWithId {
         this.value = msg.initialValue;
         this.masterId = -1;
         setupHeartBeat();
+        electionDelegate.onStartMsg(msg);
     }
 
     public void setupHeartBeat() {

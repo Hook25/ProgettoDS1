@@ -1,5 +1,6 @@
 package it.unitn.ds1.project.actors;
 
+import it.unitn.ds1.project.Messages;
 import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.TimeoutManager;
 import it.unitn.ds1.project.Timestamp;
@@ -21,8 +22,6 @@ public class ElectionDelegate {
     public ElectionDelegate(ReplicaActor replica) {
         this.replica = replica;
         timeoutManager = replica.getTimeoutManager();
-        next = replica.getId();
-        bumpNext();
     }
 
     void onMasterTimeoutMsg(MasterTimeout msg) {
@@ -71,6 +70,7 @@ public class ElectionDelegate {
                 .max(Timestamp.COMPARATOR);
         if (!optionalBestTs.isPresent()) {
             // TODO: What to do if no one is the best to become the new master
+            return 0;
         }
         Timestamp bestTs = optionalBestTs.get();
         for (Map.Entry<Integer, List<Timestamp>> i_ts : lts.entrySet()) {
@@ -103,5 +103,10 @@ public class ElectionDelegate {
 
     private void tellNext(Object msg) {
         replica.getReplicas().get(next).tell(msg, replica.self());
+    }
+
+    public void onStartMsg(Start msg) {
+        next = replica.getId();
+        bumpNext();
     }
 }
