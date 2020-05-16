@@ -220,6 +220,19 @@ public class Messages {
         }
 
         @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ReplicaReadReply that = (ReplicaReadReply) o;
+            return value == that.value;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(value);
+        }
+
+        @Override
         public String toString() {
             return "ReplicaReadReply{" +
                     "value=" + value +

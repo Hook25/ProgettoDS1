@@ -95,6 +95,7 @@ public class ElectionDelegate {
 
 
     private void bumpNext() {
+        // TODO: this doesn't work if there is only a replica. Should we fix it?
         next = ((next + 1) % replica.getReplicas().size());
         if (replica.getId() == next) {
             this.bumpNext();

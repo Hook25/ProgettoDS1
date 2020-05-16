@@ -1,8 +1,6 @@
-plugins {
-    id 'java'
-}
+apply plugin: 'java'
 
-group 'org.example'
+group 'it.unitn.ds1.project'
 version '1.0-SNAPSHOT'
 
 repositories {
@@ -11,4 +9,13 @@ repositories {
 
 dependencies {
     implementation group: 'com.typesafe.akka', name: 'akka-actor_2.13', version: '2.6.3'
+
+    // test
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter', version: '5.6.2'
+    testImplementation group: 'com.typesafe.akka', name: 'akka-testkit_2.13', version: '2.6.5'
+}
+
+
+test {
+    useJUnitPlatform()
 }
