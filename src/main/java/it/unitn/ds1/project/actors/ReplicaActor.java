@@ -1,5 +1,4 @@
 package it.unitn.ds1.project.actors;
-import java.time.Duration;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
@@ -7,10 +6,9 @@ import it.unitn.ds1.project.Messages;
 import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.TimeoutManager;
 import it.unitn.ds1.project.Timestamp;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import akka.actor.*;
 
 public class ReplicaActor extends ActorWithId {
 
@@ -18,13 +16,9 @@ public class ReplicaActor extends ActorWithId {
 
     private List<ActorRef> replicas;
 
-    private static final int HEARTBEAT_RATE_S = 200;
+    private static final int HEARTBEAT_RATE_MS = 200;
     private static final int HEARTBEAT_TIMEOUT_T = 3; //timeout after HEARTBEAT_TIMEOUT_T * HEARTBEAT_RATE_S
-    private static final int ELECTION_ACK_TIMEOUT_S = 400;
-
-    private static final Duration HEARTBEAT_RATE_D = Duration.ofMillis(HEARTBEAT_RATE_S);
-    private static final Duration HEARTBEAT_TIMEOUT_D = Duration.ofMillis(HEARTBEAT_RATE_S * HEARTBEAT_TIMEOUT_T);
-    private static final Duration ELECTION_ACK_TIMEOUT_T = Duration.ofMillis(ELECTION_ACK_TIMEOUT_S);
+    private static final int HEARTBEAT_TIMEOUT_MS = HEARTBEAT_RATE_MS * HEARTBEAT_TIMEOUT_T;
 
     private int masterId;
 
@@ -72,11 +66,12 @@ public class ReplicaActor extends ActorWithId {
         this.replicas = msg.replicas;
         this.value = msg.initialValue;
         this.masterId = -1;
-        setupHB();
+        setupHeartBeat();
         this.next = this.id;
         this.bumpNext();
     }
-    public void setupHB(){
+
+    public void setupHeartBeat() {
         if (amIMaster()) {
             startMasterHeartBeat();
         } else {
@@ -113,18 +108,28 @@ public class ReplicaActor extends ActorWithId {
         setupTimeoutNextHeartBeat();
     }
 
-    private void setupTimeoutNextHeartBeat () {
-        timeoutManager.startTimeout(new AcknowledgeableMessage<MessageId>(StringMessageId.heartbeat()) {}, 10000, new MasterTimeout());
+    private void setupTimeoutNextHeartBeat() {
+        AcknowledgeableMessage<MessageId> waitHeartBeat = new AcknowledgeableMessage<MessageId>(StringMessageId.heartbeat()) { };
+        timeoutManager.startTimeout(waitHeartBeat, HEARTBEAT_TIMEOUT_MS, new MasterTimeout());
     }
 
-    private void onReplicaNextDead(ReplicaNextDead msg){
+    private void onReplicaNextDead(ReplicaNextDead msg) {
         electionDelegate.onReplicaNextDead(msg);
     }
-    public int getNext(){ return this.next; }
-    public int getId(){ return this.id; }
-    public void bumpNext(){
+
+    public int getNext() {
+        return this.next;
+    }
+
+    public int getId() {
+        return this.id;
+    }
+
+    public void bumpNext() {
         this.next = ((this.next + 1) % this.replicas.size());
-        if(this.id == this.next){ this.bumpNext(); }
+        if (this.id == this.next) {
+            this.bumpNext();
+        }
     }
 
     private void onReplicaElectionMsg(ReplicaElection msg) {
@@ -148,14 +153,7 @@ public class ReplicaActor extends ActorWithId {
     }
 
     private void startMasterHeartBeat() {
-        context().system().scheduler().scheduleAtFixedRate(
-                HEARTBEAT_RATE_D,
-                HEARTBEAT_RATE_D,
-                getSelf(),
-                new Messages.HeartBeatReminder(),
-                context().system().dispatcher(),
-                getSelf()
-        );
+        TimeoutManager.scheduleAtFixedRate(this, HEARTBEAT_RATE_MS, new HeartBeatReminder());
     }
 
     boolean amIMaster() {
@@ -163,7 +161,7 @@ public class ReplicaActor extends ActorWithId {
     }
 
     void tellMaster(Object message) {
-        if(masterId >= 0) {
+        if (masterId >= 0) {
             replicas.get(masterId).tell(message, getSelf());
         }
     }
@@ -174,7 +172,7 @@ public class ReplicaActor extends ActorWithId {
         }
     }
 
-    void tellNext(Object msg){
+    void tellNext(Object msg) {
         int next = getNext();
         replicas.get(next).tell(msg, getSelf());
     }
@@ -194,11 +192,13 @@ public class ReplicaActor extends ActorWithId {
     List<Timestamp> getUpdateHistory() {
         return updateHistory;
     }
-    void setUpdateHistory(List<Timestamp> ts){
-        //TODO: updateHistory = ts;
+
+    void setUpdateHistory(List<Timestamp> history) {
+        updateHistory.clear();
+        updateHistory.addAll(history);
     }
 
-    void setMasterId(int masterId){
+    void setMasterId(int masterId) {
         this.masterId = masterId;
     }
 

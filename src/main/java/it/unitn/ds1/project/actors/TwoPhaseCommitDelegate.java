@@ -8,6 +8,10 @@ import java.util.Map;
 
 public class TwoPhaseCommitDelegate {
 
+    private static final int MASTER_UPDATE_TIMEOUT = 400;
+
+    private static final int MASTER_UPDATE_OK_TIMEOUT = 400;
+
     private final ReplicaActor replicaActor;
 
     private final Map<Timestamp, Integer> updatesWaitingForOk = new HashMap<>();
@@ -29,7 +33,7 @@ public class TwoPhaseCommitDelegate {
     void onClientUpdateMsg(ClientUpdate msg) {
         ReplicaUpdate forwardedMessage = ReplicaUpdate.fromClientUpdate(msg);
         replicaActor.tellMaster(forwardedMessage);
-        replicaActor.getTimeoutManager().startTimeout(forwardedMessage, 1000, new MasterTimeout()); // TODO: replace with constant
+        replicaActor.getTimeoutManager().startTimeout(forwardedMessage, MASTER_UPDATE_TIMEOUT, new MasterTimeout());
     }
 
     void onReplicaUpdateMsg(ReplicaUpdate msg) {
@@ -47,7 +51,7 @@ public class TwoPhaseCommitDelegate {
         updatesWaitingForOk.put(msg.timestamp, msg.value);
         ReplicaUpdateAck ackForMaster = ReplicaUpdateAck.fromMasterUpdate(msg);
         replicaActor.tellMaster(ackForMaster);
-        replicaActor.getTimeoutManager().startTimeout(ackForMaster, 1000, new MasterTimeout()); // TODO: Replace with constant
+        replicaActor.getTimeoutManager().startTimeout(ackForMaster, MASTER_UPDATE_OK_TIMEOUT, new MasterTimeout());
     }
 
     void onReplicaUpdateAckMsg(ReplicaUpdateAck msg) {

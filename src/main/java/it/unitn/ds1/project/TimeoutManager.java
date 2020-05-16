@@ -1,5 +1,6 @@
 package it.unitn.ds1.project;
 
+import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Cancellable;
@@ -7,6 +8,7 @@ import it.unitn.ds1.project.Messages.Ack;
 import it.unitn.ds1.project.Messages.AcknowledgeableMessage;
 import it.unitn.ds1.project.Messages.MessageId;
 import scala.concurrent.duration.Duration;
+import scala.concurrent.duration.FiniteDuration;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +24,18 @@ public class TimeoutManager {
     public TimeoutManager(ActorRef replica, ActorSystem system) {
         this.replica = replica;
         this.system = system;
+    }
+
+    public static void scheduleAtFixedRate(Actor actor, int time, Object message) {
+        FiniteDuration duration = Duration.create(time, TimeUnit.MILLISECONDS);
+        actor.context().system().scheduler().scheduleAtFixedRate(
+                duration,
+                duration,
+                actor.self(),
+                message,
+                actor.context().system().dispatcher(),
+                actor.self()
+        );
     }
 
     public void startTimeout(AcknowledgeableMessage<? extends MessageId> msg, int time, Object toDeliver) {
