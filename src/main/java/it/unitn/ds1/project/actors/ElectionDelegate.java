@@ -16,9 +16,13 @@ public class ElectionDelegate {
     private final TimeoutManager timeoutManager;
     private final ReplicaActor replica;
 
+    private int next;
+
     public ElectionDelegate(ReplicaActor replica) {
         this.replica = replica;
         timeoutManager = replica.getTimeoutManager();
+        this.next = replica.getId();
+        this.bumpNext();
     }
 
     void onMasterTimeoutMsg(MasterTimeout msg) {
@@ -28,7 +32,7 @@ public class ElectionDelegate {
     void startElection(Map<Integer, List<Timestamp>> partial) {
         partial.put(replica.getId(), replica.getUpdateHistory());
         ReplicaElection toSend = new ReplicaElection(partial);
-        replica.tellNext(toSend);
+        tellNext(toSend);
         this.timeoutManager.startTimeout(toSend, ELECTION_ACK_TIMEOUT_MS, new ReplicaNextDead(partial));
     }
 
@@ -72,7 +76,7 @@ public class ElectionDelegate {
 
 
     void onReplicaNextDead(ReplicaNextDead msg) {
-        replica.bumpNext();
+        bumpNext();
         startElection(msg.partial);
         System.out.println("Next is dead");
     }
@@ -83,4 +87,15 @@ public class ElectionDelegate {
         replica.setupHeartBeat();
     }
 
+
+    private void bumpNext() {
+        this.next = ((this.next + 1) % replica.getReplicas().size());
+        if (replica.getId() == this.next) {
+            this.bumpNext();
+        }
+    }
+
+    private void tellNext(Object msg) {
+        replica.getReplicas().get(next).tell(msg, replica.self());
+    }
 }

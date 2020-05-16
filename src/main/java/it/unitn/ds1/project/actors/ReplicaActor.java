@@ -22,7 +22,6 @@ public class ReplicaActor extends ActorWithId {
 
     private int masterId;
 
-    private int next;
     private final int id;
 
 
@@ -69,8 +68,6 @@ public class ReplicaActor extends ActorWithId {
         this.value = msg.initialValue;
         this.masterId = -1;
         setupHeartBeat();
-        this.next = this.id;
-        this.bumpNext();
     }
 
     public void setupHeartBeat() {
@@ -96,19 +93,8 @@ public class ReplicaActor extends ActorWithId {
         timeoutManager.startTimeout(waitHeartBeat, HEARTBEAT_TIMEOUT_MS, new MasterTimeout());
     }
 
-    public int getNext() {
-        return this.next;
-    }
-
     public int getId() {
         return this.id;
-    }
-
-    public void bumpNext() {
-        this.next = ((this.next + 1) % this.replicas.size());
-        if (this.id == this.next) {
-            this.bumpNext();
-        }
     }
 
     private void onClientReadMsg(ClientRead msg) {
@@ -137,11 +123,6 @@ public class ReplicaActor extends ActorWithId {
         for (ActorRef replica : replicas) {
             replica.tell(message, getSelf());
         }
-    }
-
-    void tellNext(Object msg) {
-        int next = getNext();
-        replicas.get(next).tell(msg, getSelf());
     }
 
     void logMessageIgnored(String reason) {
