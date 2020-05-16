@@ -21,11 +21,6 @@ public class TwoPhaseCommitDelegate {
      */
     private final Map<Timestamp, Integer> acksCount = new HashMap<>();
 
-    /**
-     * used only by the master
-     */
-    private Timestamp latestTimestamp = new Timestamp(0, 0);
-
     public TwoPhaseCommitDelegate(ReplicaActor replicaActor) {
         this.replicaActor = replicaActor;
     }
@@ -41,9 +36,10 @@ public class TwoPhaseCommitDelegate {
             replicaActor.logMessageIgnored("non-master replica shouldn't receive messages of type ReplicaUpdate");
             return;
         }
-        latestTimestamp = latestTimestamp.nextUpdate();
-        acksCount.put(latestTimestamp, 0);
-        replicaActor.tellBroadcast(MasterUpdate.fromReplicaUpdate(msg, latestTimestamp));
+        Timestamp ts = replicaActor.getLatestTimestamp().nextUpdate();
+        replicaActor.setLatestTimestamp(ts);
+        acksCount.put(ts, 0);
+        replicaActor.tellBroadcast(MasterUpdate.fromReplicaUpdate(msg, ts));
     }
 
     void onMasterUpdateMsg(MasterUpdate msg) {

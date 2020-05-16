@@ -21,8 +21,8 @@ public class ElectionDelegate {
     public ElectionDelegate(ReplicaActor replica) {
         this.replica = replica;
         timeoutManager = replica.getTimeoutManager();
-        this.next = replica.getId();
-        this.bumpNext();
+        next = replica.getId();
+        bumpNext();
     }
 
     void onMasterTimeoutMsg(MasterTimeout msg) {
@@ -33,7 +33,7 @@ public class ElectionDelegate {
         partial.put(replica.getId(), replica.getUpdateHistory());
         ReplicaElection toSend = new ReplicaElection(partial);
         tellNext(toSend);
-        this.timeoutManager.startTimeout(toSend, ELECTION_ACK_TIMEOUT_MS, new ReplicaNextDead(partial));
+        timeoutManager.startTimeout(toSend, ELECTION_ACK_TIMEOUT_MS, new ReplicaNextDead(partial));
     }
 
     void onReplicaElectionAckMsg(ReplicaElectionAck msg) {
@@ -49,22 +49,11 @@ public class ElectionDelegate {
         }
     }
 
-    int getNewBest(Map<Integer, List<Timestamp>> lts) {
-        int best = -1;
-        Optional<Timestamp> ts =
-                lts.entrySet().stream().flatMap(entry -> entry.getValue().stream()).max(Timestamp.COMPARATOR);
-        for (Map.Entry<Integer, List<Timestamp>> i_ts : lts.entrySet()) {
-            if (best < 0 && i_ts.getValue().contains(ts)) {
-                best = i_ts.getKey();
-            }
-        }
-        return best;
-    }
-
     void pickLeader(Map<Integer, List<Timestamp>> lts) {
         int new_leader = getNewBest(lts);
         if (replica.getId() == new_leader) {
             replica.tellBroadcast(new MasterSync(replica.getUpdateHistory(), new_leader));
+            replica.setLatestTimestamp(replica.getLatestTimestamp().nextEpoch());
         }
 
         /*if(replica.GetId() == 0){
@@ -74,23 +63,40 @@ public class ElectionDelegate {
         replica.SetupHB();*/
     }
 
+    int getNewBest(Map<Integer, List<Timestamp>> lts) {
+        int best = -1;
+        Optional<Timestamp> optionalBestTs = lts.entrySet()
+                .stream()
+                .flatMap(entry -> entry.getValue().stream())
+                .max(Timestamp.COMPARATOR);
+        if (!optionalBestTs.isPresent()) {
+            // TODO: What to do if no one is the best to become the new master
+        }
+        Timestamp bestTs = optionalBestTs.get();
+        for (Map.Entry<Integer, List<Timestamp>> i_ts : lts.entrySet()) {
+            if (best < 0 && i_ts.getValue().contains(bestTs)) {
+                best = i_ts.getKey();
+            }
+        }
+        return best;
+    }
 
     void onReplicaNextDead(ReplicaNextDead msg) {
         bumpNext();
         startElection(msg.partial);
-        System.out.println("Next is dead");
+        replica.log("Next is dead");
     }
 
     void onMasterSyncMsg(MasterSync msg) {
         replica.setUpdateHistory(msg.history);
         replica.setMasterId(msg.masterId);
-        replica.setupHeartBeat();
+        replica.setupHeartBeat(); // TODO: should we cancel previous heartbeat timeout?
     }
 
 
     private void bumpNext() {
-        this.next = ((this.next + 1) % replica.getReplicas().size());
-        if (replica.getId() == this.next) {
+        next = ((next + 1) % replica.getReplicas().size());
+        if (replica.getId() == next) {
             this.bumpNext();
         }
     }

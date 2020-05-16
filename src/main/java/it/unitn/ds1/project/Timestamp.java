@@ -53,4 +53,8 @@ public class Timestamp implements Comparable<Timestamp>, Messages.MessageId {
     public Timestamp nextUpdate() {
         return new Timestamp(counter + 1, epoch);
     }
+
+    public Timestamp nextEpoch() {
+        return new Timestamp(0, epoch + 1);
+    }
 }

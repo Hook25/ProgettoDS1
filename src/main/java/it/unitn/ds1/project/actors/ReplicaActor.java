@@ -32,6 +32,11 @@ public class ReplicaActor extends ActorWithId {
     private final TwoPhaseCommitDelegate twoPhaseCommitDelegate = new TwoPhaseCommitDelegate(this);
     private final ElectionDelegate electionDelegate = new ElectionDelegate(this);
 
+    /**
+     * used only by the master
+     */
+    private Timestamp latestTimestamp = new Timestamp(0, 0);
+
     static public Props props(int id) {
         return Props.create(ReplicaActor.class, () -> new ReplicaActor(id));
     }
@@ -152,5 +157,13 @@ public class ReplicaActor extends ActorWithId {
 
     public List<ActorRef> getReplicas() {
         return replicas;
+    }
+
+    public Timestamp getLatestTimestamp() {
+        return latestTimestamp;
+    }
+
+    public void setLatestTimestamp(Timestamp latestTimestamp) {
+        this.latestTimestamp = latestTimestamp;
     }
 }
