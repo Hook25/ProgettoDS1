@@ -46,19 +46,21 @@ public class ReplicaActor extends ActorWithId {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(Start.class, this::onStartMsg)
-                .match(ClientUpdate.class, this::onClientUpdateMsg)
-                .match(ReplicaUpdate.class, this::onReplicaUpdateMsg)
-                .match(MasterUpdate.class, this::onMasterUpdateMsg)
-                .match(ReplicaUpdateAck.class, this::onReplicaUpdateAckMsg)
-                .match(MasterUpdateOk.class, this::onMasterUpdateOkMsg)
                 .match(MasterHeartBeat.class, this::onMasterHeartBeatMsg)
-                .match(ReplicaElection.class, this::onReplicaElectionMsg)
-                .match(MasterSync.class, this::onMasterSyncMsg)
-                .match(ReplicaElectionAck.class, this::onReplicaElectionAckMsg)
+
+                .match(ClientUpdate.class, twoPhaseCommitDelegate::onClientUpdateMsg)
+                .match(ReplicaUpdate.class, twoPhaseCommitDelegate::onReplicaUpdateMsg)
+                .match(MasterUpdate.class, twoPhaseCommitDelegate::onMasterUpdateMsg)
+                .match(ReplicaUpdateAck.class, twoPhaseCommitDelegate::onReplicaUpdateAckMsg)
+                .match(MasterUpdateOk.class, twoPhaseCommitDelegate::onMasterUpdateOkMsg)
+                .match(ReplicaNextDead.class, electionDelegate::onReplicaNextDead)
+
+                .match(ReplicaElection.class, electionDelegate::onReplicaElectionMsg)
+                .match(MasterSync.class, electionDelegate::onMasterSyncMsg)
+                .match(ReplicaElectionAck.class, electionDelegate::onReplicaElectionAckMsg)
                 .match(ClientRead.class, this::onClientReadMsg)
                 .match(MasterTimeout.class, this::onMasterTimeoutMsg)
                 .match(HeartBeatReminder.class, this::onMasterHeartBeatReminderMsg)
-                .match(ReplicaNextDead.class, this::onReplicaNextDead)
                 .build();
     }
 
@@ -79,26 +81,6 @@ public class ReplicaActor extends ActorWithId {
         }
     }
 
-    private void onClientUpdateMsg(Messages.ClientUpdate msg) {
-        twoPhaseCommitDelegate.onClientUpdateMsg(msg);
-    }
-
-    private void onReplicaUpdateMsg(Messages.ReplicaUpdate msg) {
-        twoPhaseCommitDelegate.onReplicaUpdateMsg(msg);
-    }
-
-    private void onMasterUpdateMsg(Messages.MasterUpdate msg) {
-        twoPhaseCommitDelegate.onMasterUpdateMsg(msg);
-    }
-
-    private void onReplicaUpdateAckMsg(Messages.ReplicaUpdateAck msg) {
-        twoPhaseCommitDelegate.onReplicaUpdateAckMsg(msg);
-    }
-
-    private void onMasterUpdateOkMsg(Messages.MasterUpdateOk msg) {
-        twoPhaseCommitDelegate.onMasterUpdateOkMsg(msg);
-    }
-
     private void onMasterTimeoutMsg(MasterTimeout msg) {
         electionDelegate.onMasterTimeoutMsg(msg);
     }
@@ -109,12 +91,9 @@ public class ReplicaActor extends ActorWithId {
     }
 
     private void setupTimeoutNextHeartBeat() {
-        AcknowledgeableMessage<MessageId> waitHeartBeat = new AcknowledgeableMessage<MessageId>(StringMessageId.heartbeat()) { };
+        AcknowledgeableMessage<MessageId> waitHeartBeat = new AcknowledgeableMessage<MessageId>(StringMessageId.heartbeat()) {
+        };
         timeoutManager.startTimeout(waitHeartBeat, HEARTBEAT_TIMEOUT_MS, new MasterTimeout());
-    }
-
-    private void onReplicaNextDead(ReplicaNextDead msg) {
-        electionDelegate.onReplicaNextDead(msg);
     }
 
     public int getNext() {
@@ -130,18 +109,6 @@ public class ReplicaActor extends ActorWithId {
         if (this.id == this.next) {
             this.bumpNext();
         }
-    }
-
-    private void onReplicaElectionMsg(ReplicaElection msg) {
-        electionDelegate.onReplicaElectionMsg(msg);
-    }
-
-    private void onMasterSyncMsg(MasterSync msg) {
-        electionDelegate.onMasterSyncMsg(msg);
-    }
-
-    private void onReplicaElectionAckMsg(ReplicaElectionAck msg) {
-        electionDelegate.onReplicaElectionAckMsg(msg);
     }
 
     private void onClientReadMsg(ClientRead msg) {
