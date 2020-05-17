@@ -2,7 +2,6 @@ package it.unitn.ds1.project.actors;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import it.unitn.ds1.project.Messages;
 import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.TimeoutManager;
 import it.unitn.ds1.project.Timestamp;
@@ -16,9 +15,9 @@ public class ReplicaActor extends ActorWithId {
 
     private List<ActorRef> replicas;
 
-    private static final int HEARTBEAT_RATE_MS = 200;
+    private static final int HEARTBEAT_RATE_MS = 500;
     private static final int HEARTBEAT_TIMEOUT_T = 3; //timeout after HEARTBEAT_TIMEOUT_T * HEARTBEAT_RATE_S
-    private static final int HEARTBEAT_TIMEOUT_MS = HEARTBEAT_RATE_MS * HEARTBEAT_TIMEOUT_T;
+    public static final int HEARTBEAT_TIMEOUT_MS = HEARTBEAT_RATE_MS * HEARTBEAT_TIMEOUT_T;
 
     private int masterId;
 

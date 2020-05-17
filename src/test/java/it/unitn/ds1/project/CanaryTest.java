@@ -5,7 +5,9 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.testkit.javadsl.TestKit;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 
@@ -62,7 +64,7 @@ public class CanaryTest {
     public void testIt() {
         /*
          * Wrap the whole test procedure within a testkit constructor
-         * if you want to receive actor replies or use Within(), etc.
+         * if you want to receive actor replies or use Within(),  etc.
          */
         new TestKit(system) {
             {

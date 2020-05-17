@@ -1,6 +1,5 @@
 package it.unitn.ds1.project.actors;
 
-import it.unitn.ds1.project.Messages;
 import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.TimeoutManager;
 import it.unitn.ds1.project.Timestamp;
