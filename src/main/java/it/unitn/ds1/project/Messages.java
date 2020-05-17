@@ -3,10 +3,7 @@ package it.unitn.ds1.project;
 import akka.actor.ActorRef;
 
 import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 public class Messages {
 
@@ -165,7 +162,7 @@ public class Messages {
 
         public ReplicaElection(Map<Integer, List<Timestamp>> historyByNodeId) {
             super(new StringMessageId());
-            this.historyByNodeId = historyByNodeId;
+            this.historyByNodeId = Collections.unmodifiableMap(new HashMap<>(historyByNodeId));
         }
 
 
@@ -182,7 +179,7 @@ public class Messages {
         public final int masterId;
 
         public MasterSync(List<Timestamp> history, int masterId) {
-            this.history = history;
+            this.history = Collections.unmodifiableList(new ArrayList<>(history));
             this.masterId = masterId;
         }
 

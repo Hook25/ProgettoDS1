@@ -29,6 +29,7 @@ public class ElectionDelegate {
     }
 
     void startElection(Map<Integer, List<Timestamp>> partial) {
+        partial = new HashMap<>(partial);
         partial.put(replica.getId(), replica.getUpdateHistory());
         ReplicaElection toSend = new ReplicaElection(partial);
         tellNext(toSend);
