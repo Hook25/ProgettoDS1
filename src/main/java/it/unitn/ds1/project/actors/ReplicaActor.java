@@ -8,6 +8,8 @@ import it.unitn.ds1.project.Timestamp;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ReplicaActor extends ActorWithId {
 
@@ -87,14 +89,23 @@ public class ReplicaActor extends ActorWithId {
 
     void tellMaster(Object message) {
         if (masterId >= 0) {
+            latency();
             replicas.get(masterId).tell(message, getSelf());
         }
     }
 
     void tellBroadcast(Object message) {
         for (ActorRef replica : replicas) {
+            latency();
             replica.tell(message, getSelf());
         }
+    }
+
+    private void latency () {
+        try {
+            Random random = ThreadLocalRandom.current();
+            Thread.sleep(random.nextInt(10) + 1);
+        } catch (InterruptedException e) { }
     }
 
     void logMessageIgnored(String reason) {
@@ -141,6 +152,7 @@ public class ReplicaActor extends ActorWithId {
     void endElection() {
         heartbeatDelegate.endElection();
     }
+
     void cancelHeartbeat(){
         heartbeatDelegate.cancelHeartbeat();
     }
