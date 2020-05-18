@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static it.unitn.ds1.project.actors.ReplicaActor.HEARTBEAT_TIMEOUT_MS;
+import static it.unitn.ds1.project.actors.HeartbeatDelegate.HEARTBEAT_TIMEOUT_MS;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class MyAkkaTest {
