@@ -90,7 +90,7 @@ public class ElectionDelegate {
     void onMasterSyncMsg(MasterSync msg) {
         replica.setUpdateHistory(msg.history);
         replica.setMasterId(msg.masterId);
-        replica.setupHeartBeat(); // TODO: should we cancel previous heartbeat timeout?
+        //replica.setupHeartBeat(); // TODO: should we cancel previous heartbeat timeout?
     }
 
 

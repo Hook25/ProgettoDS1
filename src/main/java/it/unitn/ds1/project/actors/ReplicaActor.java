@@ -16,10 +16,6 @@ public class ReplicaActor extends ActorWithId {
 
     private List<ActorRef> replicas;
 
-    private static final int HEARTBEAT_RATE_MS = 200;
-    private static final int HEARTBEAT_TIMEOUT_T = 3; //timeout after HEARTBEAT_TIMEOUT_T * HEARTBEAT_RATE_S
-    private static final int HEARTBEAT_TIMEOUT_MS = HEARTBEAT_RATE_MS * HEARTBEAT_TIMEOUT_T;
-
     private int masterId;
 
     private final int id;
@@ -31,6 +27,7 @@ public class ReplicaActor extends ActorWithId {
 
     private final TwoPhaseCommitDelegate twoPhaseCommitDelegate = new TwoPhaseCommitDelegate(this);
     private final ElectionDelegate electionDelegate = new ElectionDelegate(this);
+    private final HeartbeatDelegate heartbeatDelegate = new HeartbeatDelegate(this);
 
     /**
      * used only by the master
@@ -50,7 +47,7 @@ public class ReplicaActor extends ActorWithId {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(Start.class, this::onStartMsg)
-                .match(MasterHeartBeat.class, this::onMasterHeartBeatMsg)
+                .match(ClientRead.class, this::onClientReadMsg)
 
                 .match(ClientUpdate.class, twoPhaseCommitDelegate::onClientUpdateMsg)
                 .match(ReplicaUpdate.class, twoPhaseCommitDelegate::onReplicaUpdateMsg)
@@ -62,9 +59,10 @@ public class ReplicaActor extends ActorWithId {
                 .match(ReplicaElection.class, electionDelegate::onReplicaElectionMsg)
                 .match(MasterSync.class, electionDelegate::onMasterSyncMsg)
                 .match(ReplicaElectionAck.class, electionDelegate::onReplicaElectionAckMsg)
-                .match(ClientRead.class, this::onClientReadMsg)
+
+                .match(MasterHeartBeat.class, heartbeatDelegate::onMasterHeartBeatMsg)
                 .match(MasterTimeout.class, this::onMasterTimeoutMsg)
-                .match(HeartBeatReminder.class, this::onMasterHeartBeatReminderMsg)
+                .match(HeartBeatReminder.class, heartbeatDelegate::onMasterHeartBeatReminderMsg)
                 .build();
     }
 
@@ -72,31 +70,8 @@ public class ReplicaActor extends ActorWithId {
         this.replicas = msg.replicas;
         this.value = msg.initialValue;
         this.masterId = -1;
-        setupHeartBeat();
+        this.heartbeatDelegate.setup();
         electionDelegate.onStartMsg(msg);
-    }
-
-    public void setupHeartBeat() {
-        if (amIMaster()) {
-            startMasterHeartBeat();
-        } else {
-            setupTimeoutNextHeartBeat();
-        }
-    }
-
-    private void onMasterTimeoutMsg(MasterTimeout msg) {
-        electionDelegate.onMasterTimeoutMsg(msg);
-    }
-
-    private void onMasterHeartBeatMsg(MasterHeartBeat msg) {
-        timeoutManager.cancelTimeout(msg);
-        setupTimeoutNextHeartBeat();
-    }
-
-    private void setupTimeoutNextHeartBeat() {
-        AcknowledgeableMessage<MessageId> waitHeartBeat = new AcknowledgeableMessage<MessageId>(StringMessageId.heartbeat()) {
-        };
-        timeoutManager.startTimeout(waitHeartBeat, HEARTBEAT_TIMEOUT_MS, new MasterTimeout());
     }
 
     public int getId() {
@@ -107,15 +82,7 @@ public class ReplicaActor extends ActorWithId {
         getSender().tell(new ReplicaReadReply(value), getSender());
     }
 
-    private void onMasterHeartBeatReminderMsg(HeartBeatReminder msg) {
-        tellBroadcast(new MasterHeartBeat());
-    }
-
-    private void startMasterHeartBeat() {
-        TimeoutManager.scheduleAtFixedRate(this, HEARTBEAT_RATE_MS, new HeartBeatReminder());
-    }
-
-    boolean amIMaster() {
+    boolean isMaster() {
         return id == masterId;
     }
 
@@ -166,5 +133,9 @@ public class ReplicaActor extends ActorWithId {
 
     public void setLatestTimestamp(Timestamp latestTimestamp) {
         this.latestTimestamp = latestTimestamp;
+    }
+
+    void onMasterTimeoutMsg(Messages.MasterTimeout msg) {
+        electionDelegate.onMasterTimeoutMsg(msg);
     }
 }

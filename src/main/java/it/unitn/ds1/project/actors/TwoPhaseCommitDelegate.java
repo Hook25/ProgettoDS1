@@ -32,7 +32,7 @@ public class TwoPhaseCommitDelegate {
     }
 
     void onReplicaUpdateMsg(ReplicaUpdate msg) {
-        if (!replicaActor.amIMaster()) {
+        if (!replicaActor.isMaster()) {
             replicaActor.logMessageIgnored("non-master replica shouldn't receive messages of type ReplicaUpdate");
             return;
         }
@@ -51,7 +51,7 @@ public class TwoPhaseCommitDelegate {
     }
 
     void onReplicaUpdateAckMsg(ReplicaUpdateAck msg) {
-        if (!replicaActor.amIMaster()) {
+        if (!replicaActor.isMaster()) {
             replicaActor.logMessageIgnored("non-master replica shouldn't receive messages of type ReplicaUpdateAck");
             return;
         }
