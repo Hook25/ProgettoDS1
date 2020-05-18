@@ -1,6 +1,5 @@
 package it.unitn.ds1.project.actors;
 
-import it.unitn.ds1.project.Messages;
 import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.TimeoutManager;
 import it.unitn.ds1.project.Timestamp;
@@ -29,6 +28,7 @@ public class ElectionDelegate {
     }
 
     void startElection(Map<Integer, List<Timestamp>> partial) {
+        partial = new HashMap<>(partial);
         partial.put(replica.getId(), replica.getUpdateHistory());
         ReplicaElection toSend = new ReplicaElection(partial);
         tellNext(toSend);
@@ -96,6 +96,7 @@ public class ElectionDelegate {
 
 
     private void bumpNext() {
+        // TODO: this doesn't work if there is only a replica. Should we fix it?
         next = ((next + 1) % replica.getReplicas().size());
         if (replica.getId() == next) {
             this.bumpNext();

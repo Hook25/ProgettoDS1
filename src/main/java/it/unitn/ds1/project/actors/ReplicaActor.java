@@ -2,7 +2,6 @@ package it.unitn.ds1.project.actors;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import it.unitn.ds1.project.Messages;
 import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.TimeoutManager;
 import it.unitn.ds1.project.Timestamp;
@@ -135,7 +134,7 @@ public class ReplicaActor extends ActorWithId {
         this.latestTimestamp = latestTimestamp;
     }
 
-    void onMasterTimeoutMsg(Messages.MasterTimeout msg) {
+    void onMasterTimeoutMsg(MasterTimeout msg) {
         heartbeatDelegate.startElection();
         electionDelegate.onMasterTimeoutMsg(msg);
     }
