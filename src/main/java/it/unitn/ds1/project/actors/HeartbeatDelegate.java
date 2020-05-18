@@ -19,12 +19,12 @@ public class HeartbeatDelegate {
 
     private void setupHeartBeat() {
         if (replica.isMaster()) {
-            startMasterHeartBeat();
+            setupMasterHeartBeat();
         } else {
             setupTimeoutNextHeartBeat();
         }
     }
-    private void startMasterHeartBeat() {
+    private void setupMasterHeartBeat() {
         TimeoutManager.scheduleAtFixedRate(replica, HEARTBEAT_RATE_MS, new Messages.HeartBeatReminder());
     }
 
@@ -47,9 +47,12 @@ public class HeartbeatDelegate {
     }
 
     void startElection(){
-        //cancel hb timeout
+        timeoutManager.cancelTimeout(new Messages.MasterHeartBeat());
     }
     void onMasterHeartBeatReminderMsg(Messages.HeartBeatReminder msg) {
         replica.tellBroadcast(new Messages.MasterHeartBeat());
+    }
+    void cancelHeartbeat(){
+        timeoutManager.cancelTimeout(new Messages.MasterHeartBeat());
     }
 }

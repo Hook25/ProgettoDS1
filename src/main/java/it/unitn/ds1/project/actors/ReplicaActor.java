@@ -136,6 +136,13 @@ public class ReplicaActor extends ActorWithId {
     }
 
     void onMasterTimeoutMsg(Messages.MasterTimeout msg) {
+        heartbeatDelegate.startElection();
         electionDelegate.onMasterTimeoutMsg(msg);
+    }
+    void endElection() {
+        heartbeatDelegate.endElection();
+    }
+    void cancelHeartbeat(){
+        heartbeatDelegate.cancelHeartbeat();
     }
 }

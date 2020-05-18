@@ -40,6 +40,7 @@ public class ElectionDelegate {
     }
 
     void onReplicaElectionMsg(ReplicaElection msg) {
+        replica.cancelHeartbeat();
         replica.getSender().tell(new ReplicaElectionAck(msg.id), replica.getSelf());
         if (msg.historyByNodeId.containsKey(replica.getId())) { //full ring trip done
             this.pickLeader(msg.historyByNodeId);
@@ -90,7 +91,7 @@ public class ElectionDelegate {
     void onMasterSyncMsg(MasterSync msg) {
         replica.setUpdateHistory(msg.history);
         replica.setMasterId(msg.masterId);
-        //replica.setupHeartBeat(); // TODO: should we cancel previous heartbeat timeout?
+        replica.endElection(); // TODO: should we cancel previous heartbeat timeout?
     }
 
 
