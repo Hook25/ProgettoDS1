@@ -68,7 +68,7 @@ public class Messages {
 
         public final int value;
 
-        private ReplicaUpdate(int value) {
+        public ReplicaUpdate(int value) {
             super(new StringMessageId());
             this.value = value;
         }
@@ -97,7 +97,7 @@ public class Messages {
             this.timestamp = timestamp;
         }
 
-        public static Object fromReplicaUpdate(ReplicaUpdate msg, Timestamp t) {
+        public static MasterUpdate fromReplicaUpdate(ReplicaUpdate msg, Timestamp t) {
             return new MasterUpdate(msg.id, msg.value, t);
         }
 
@@ -136,6 +136,19 @@ public class Messages {
         public MasterUpdateOk(Timestamp timestamp) {
             super(timestamp);
             this.timestamp = timestamp;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            MasterUpdateOk that = (MasterUpdateOk) o;
+            return timestamp.equals(that.timestamp);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(timestamp);
         }
 
         @Override

@@ -1,45 +1,34 @@
 package it.unitn.ds1.project;
 
-import akka.actor.ActorRef;
-import akka.testkit.javadsl.TestKit;
-import it.unitn.ds1.project.Messages.*;
-import it.unitn.ds1.project.actors.ReplicaActor;
+import it.unitn.ds1.project.Messages.MasterSync;
+import it.unitn.ds1.project.Messages.ReplicaElection;
+import it.unitn.ds1.project.Messages.ReplicaElectionAck;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-
 public class TestElection extends MyAkkaTest {
 
     @Test
     public void testInitialElection() {
-        new TestKit(system) {
+        new MyTestKit(3) {
             {
-                List<ActorRef> replicas = new ArrayList<>();
-                for (int i = 0; i < 3; i++) {
-                    replicas.add(system.actorOf(ReplicaActor.props(i)));
-                }
-
-                Sniffer sniffer = new Sniffer(replicas);
                 sniffer.sendStartMsgFirstScattered();
-
                 within(Duration.ofSeconds(5), () -> {
                     // 0 -> 1
-                    sniffer.expectMsg(replicas.get(0), replicas.get(1), ReplicaElection.class);
-                    sniffer.expectMsg(replicas.get(1), replicas.get(0), ReplicaElectionAck.class);
+                    sniffer.expectMsgFrom(replicas[1], ReplicaElection.class, replicas[0]);
+                    sniffer.expectMsgFrom(replicas[0], ReplicaElectionAck.class, replicas[1]);
 
                     // 1 -> 2
-                    sniffer.expectMsg(replicas.get(1), replicas.get(2), ReplicaElection.class);
-                    sniffer.expectMsg(replicas.get(2), replicas.get(1), ReplicaElectionAck.class);
+                    sniffer.expectMsgFrom(replicas[2], ReplicaElection.class, replicas[1]);
+                    sniffer.expectMsgFrom(replicas[1], ReplicaElectionAck.class, replicas[2]);
 
                     // 2 -> 3
-                    sniffer.expectMsg(replicas.get(2), replicas.get(0), ReplicaElection.class);
-                    sniffer.expectMsg(replicas.get(0), replicas.get(2), ReplicaElectionAck.class);
+                    sniffer.expectMsgFrom(replicas[0], ReplicaElection.class, replicas[2]);
+                    sniffer.expectMsgFrom(replicas[2], ReplicaElectionAck.class, replicas[0]);
 
                     // Sync
-                    sniffer.expectMsg(replicas.get(0), replicas.get(1), MasterSync.class);
-                    sniffer.expectMsg(replicas.get(0), replicas.get(2), MasterSync.class);
+                    sniffer.expectMsgFrom(replicas[1], MasterSync.class, replicas[0]);
+                    sniffer.expectMsgFrom(replicas[2], MasterSync.class, replicas[0]);
 
                     return null;
                 });
