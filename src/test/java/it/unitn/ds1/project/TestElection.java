@@ -2,8 +2,7 @@ package it.unitn.ds1.project;
 
 import akka.actor.ActorRef;
 import akka.testkit.javadsl.TestKit;
-import it.unitn.ds1.project.Messages.MasterSync;
-import it.unitn.ds1.project.Messages.ReplicaElection;
+import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.actors.ReplicaActor;
 import org.junit.jupiter.api.Test;
 
@@ -26,18 +25,17 @@ public class TestElection extends MyAkkaTest {
                 sniffer.sendStartMsgFirstScattered();
 
                 within(Duration.ofSeconds(5), () -> {
+                    // 0 -> 1
                     sniffer.expectMsg(replicas.get(0), replicas.get(1), ReplicaElection.class);
+                    sniffer.expectMsg(replicas.get(1), replicas.get(0), ReplicaElectionAck.class);
+
+                    // 1 -> 2
                     sniffer.expectMsg(replicas.get(1), replicas.get(2), ReplicaElection.class);
+                    sniffer.expectMsg(replicas.get(2), replicas.get(1), ReplicaElectionAck.class);
+
+                    // 2 -> 3
                     sniffer.expectMsg(replicas.get(2), replicas.get(0), ReplicaElection.class);
-
-                    /*
-                     * TODO: Can we find a way to test also the acks?
-                     * currently we can't, because in ElectionDelegate, the replica replies to the ElectionMessage
-                     * calling .getSender(), which will return the real replica instead of the TestKit (since our
-                     * ForwarderProbe specifies the real sender when it forwards the message).
-                     *
-                     */
-
+                    sniffer.expectMsg(replicas.get(0), replicas.get(2), ReplicaElectionAck.class);
 
                     // Sync
                     sniffer.expectMsg(replicas.get(0), replicas.get(1), MasterSync.class);

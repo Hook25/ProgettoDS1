@@ -91,21 +91,20 @@ public class MyAkkaTest {
             return null;
         }
 
-    }
+        public class ForwarderProbe extends TestKit {
+            final ActorRef receiver;
 
-    public static class ForwarderProbe extends TestKit {
-        final ActorRef receiver;
-
-        public ForwarderProbe(ActorSystem system, ActorRef receiver) {
-            super(system);
-            this.receiver = receiver;
-            setAutoPilot(new TestActor.AutoPilot() {
-                public TestActor.AutoPilot run(ActorRef sender, Object msg) {
-                    receiver.tell(msg, sender);
-                    return this;
-                }
-            });
+            public ForwarderProbe(ActorSystem system, ActorRef receiver) {
+                super(system);
+                this.receiver = receiver;
+                setAutoPilot(new TestActor.AutoPilot() {
+                    public TestActor.AutoPilot run(ActorRef sender, Object msg) {
+                        ActorRef simulatedSender = probeByReplica.get(sender).getRef()
+                        receiver.tell(msg, simulatedSender);
+                        return this;
+                    }
+                });
+            }
         }
     }
-
 }
