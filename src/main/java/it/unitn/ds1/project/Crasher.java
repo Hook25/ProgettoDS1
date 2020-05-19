@@ -26,11 +26,11 @@ public class Crasher {
         this.instanceF = instanceF;
     }
     public void consume(Object message){
-        if(crashed){ return; }
+        Timestamp ts = replica.getLatestTimestamp();
+        if(crashed){ System.out.println("ignored message, I'm dead"); }
         if(instanceF == null || crashTime == null){
             receiver.onMessage().apply(message);
         }else if(instanceF.apply(message) && replica.getLatestTimestamp().equals(crashTime)){
-            System.out.println("NOOOOOOOOOOOOOOOOOOOO");
             crashed = true;
         }else{
             receiver.onMessage().apply(message);

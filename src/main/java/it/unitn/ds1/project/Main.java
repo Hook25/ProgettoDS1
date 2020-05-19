@@ -38,12 +38,15 @@ public class Main {
             }
         };
 
-        replicas.get(0).tell(new Messages.CrashPlanner(new Timestamp(0,0), tmp), null);
-
+        System.out.println(">>> Press ENTER to crash 0 <<<");
+        System.in.read();
+        replicas.get(0).tell(new Messages.CrashPlanner(new Timestamp(0,1), tmp), null);
         replicas.get(0).tell(new Messages.ClientRead(), client);
+        //replicas.get(0).tell(new Messages.CrashPlanner(new Timestamp(1,1), tmp), null);
+        System.out.println(">>> Press ENTER to write <<<");
+        System.in.read();
         replicas.get(0).tell(new Messages.ClientUpdate(5), client);
         replicas.get(0).tell(new Messages.ClientRead(), client);
-
         System.out.println(">>> Press ENTER to exit <<<");
         System.in.read();
         system.terminate();

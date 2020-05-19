@@ -52,6 +52,7 @@ public class ElectionDelegate {
     void pickLeader(Map<Integer, List<Timestamp>> lts) {
         int new_leader = getNewBest(lts);
         if (replica.getId() == new_leader) {
+            System.out.println("Election ended, new leader is " + new_leader);
             replica.tellBroadcast(new MasterSync(replica.getUpdateHistory(), new_leader));
             replica.setLatestTimestamp(replica.getLatestTimestamp().nextEpoch());
         }
