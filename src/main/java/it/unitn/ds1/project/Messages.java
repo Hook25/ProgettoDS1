@@ -3,7 +3,9 @@ package it.unitn.ds1.project;
 import akka.actor.ActorRef;
 
 import java.io.Serializable;
+import java.sql.Time;
 import java.util.*;
+import java.util.function.Function;
 
 public class Messages {
 
@@ -47,6 +49,15 @@ public class Messages {
 
     public static class MasterTimeout implements Serializable {
 
+    }
+
+    public static class CrashPlanner implements  Serializable{
+        public Timestamp ts;
+        public Function<Object, Boolean> instanceF;
+        public  CrashPlanner(Timestamp ts, Function<Object, Boolean> instanceF){
+            this.ts = ts;
+            this.instanceF = instanceF;
+        }
     }
 
     public static class ClientUpdate implements Serializable {

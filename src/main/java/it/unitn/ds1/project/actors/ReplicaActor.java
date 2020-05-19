@@ -2,6 +2,7 @@ package it.unitn.ds1.project.actors;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import it.unitn.ds1.project.Crasher;
 import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.TimeoutManager;
 import it.unitn.ds1.project.Timestamp;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 
 public class ReplicaActor extends ActorWithId {
 
@@ -30,6 +32,8 @@ public class ReplicaActor extends ActorWithId {
     private final ElectionDelegate electionDelegate = new ElectionDelegate(this);
     private final HeartbeatDelegate heartbeatDelegate = new HeartbeatDelegate(this);
 
+    private Crasher crashHandler = new Crasher(this);
+
     /**
      * used only by the master
      */
@@ -43,10 +47,13 @@ public class ReplicaActor extends ActorWithId {
         super("Replica", id);
         this.id = id;
     }
-
+    public void onCrashPlannerMsg(CrashPlanner msg){
+        this.crashHandler.setTimestamp(msg.ts);
+        this.crashHandler.setInstanceF(msg.instanceF);
+    }
     @Override
     public Receive createReceive() {
-        return receiveBuilder()
+        Receive rc = receiveBuilder()
                 .match(Start.class, this::onStartMsg)
                 .match(ClientRead.class, this::onClientReadMsg)
 
@@ -64,7 +71,10 @@ public class ReplicaActor extends ActorWithId {
                 .match(MasterHeartBeat.class, heartbeatDelegate::onMasterHeartBeatMsg)
                 .match(MasterTimeout.class, this::onMasterTimeoutMsg)
                 .match(HeartBeatReminder.class, heartbeatDelegate::onMasterHeartBeatReminderMsg)
+                .match(CrashPlanner.class, this::onCrashPlannerMsg)
                 .build();
+        crashHandler.setReceiver(rc);
+        return receiveBuilder().matchAny(crashHandler::consume).build();
     }
 
     private void onStartMsg(Start msg) {
