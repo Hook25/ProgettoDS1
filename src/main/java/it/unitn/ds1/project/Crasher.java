@@ -7,14 +7,13 @@ import it.unitn.ds1.project.actors.ReplicaActor;
 import java.util.function.Function;
 
 public class Crasher {
-    Timestamp crashTime;
-    ReplicaActor replica;
-    Function<Object, Boolean> instanceF;
-    Boolean crashed;
-    Receive receiver;
+    private Timestamp crashTime;
+    private final ReplicaActor replica;
+    private Function<Object, Boolean> instanceF;
+    private boolean crashed = false;
+    private Receive receiver;
     public Crasher(ReplicaActor replica){
         this.replica = replica;
-        crashed = false;
     }
     public void setReceiver(Receive receiver){
         this.receiver = receiver;

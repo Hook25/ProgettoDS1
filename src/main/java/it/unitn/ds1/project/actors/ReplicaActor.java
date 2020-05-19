@@ -32,7 +32,7 @@ public class ReplicaActor extends ActorWithId {
     private final ElectionDelegate electionDelegate = new ElectionDelegate(this);
     private final HeartbeatDelegate heartbeatDelegate = new HeartbeatDelegate(this);
 
-    private Crasher crashHandler = new Crasher(this);
+    private final Crasher crashHandler = new Crasher(this);
 
     /**
      * used only by the master
