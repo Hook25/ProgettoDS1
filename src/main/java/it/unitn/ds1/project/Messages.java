@@ -171,35 +171,35 @@ public class Messages {
     }
 
     public static class ReplicaElection extends AcknowledgeableMessage<StringMessageId> implements Serializable {
-        public final Map<Integer, List<Timestamp>> historyByNodeId;
+        public final Map<Integer, Timestamp> latestUpdatesByNodeId;
 
-        public ReplicaElection(Map<Integer, List<Timestamp>> historyByNodeId) {
+        public ReplicaElection(Map<Integer, Timestamp> latestUpdatesByNodeId) {
             super(new StringMessageId());
-            this.historyByNodeId = Collections.unmodifiableMap(new HashMap<>(historyByNodeId));
+            this.latestUpdatesByNodeId = Collections.unmodifiableMap(new HashMap<>(latestUpdatesByNodeId));
         }
 
 
         @Override
         public String toString() {
             return "ReplicaElection{" +
-                    "historyByNodeId=" + historyByNodeId +
+                    "historyByNodeId=" + latestUpdatesByNodeId +
                     '}';
         }
     }
 
     public static class MasterSync implements Serializable {
-        public final List<Timestamp> history;
+        public final Timestamp latestUpdate;
         public final int masterId;
 
-        public MasterSync(List<Timestamp> history, int masterId) {
-            this.history = Collections.unmodifiableList(new ArrayList<>(history));
+        public MasterSync(Timestamp latestUpdate, int masterId) {
+            this.latestUpdate = latestUpdate;
             this.masterId = masterId;
         }
 
         @Override
         public String toString() {
             return "MasterSync{" +
-                    "history=" + history +
+                    "history=" + latestUpdate +
                     ", masterId=" + masterId +
                     '}';
         }
@@ -290,9 +290,9 @@ public class Messages {
     }
 
     public static class ReplicaNextDead extends AcknowledgeableMessage<StringMessageId> implements Serializable{
-        public final Map<Integer, List<Timestamp>> partial;
+        public final Map<Integer, Timestamp> partial;
 
-        public ReplicaNextDead(Map<Integer, List<Timestamp>> partial){
+        public ReplicaNextDead(Map<Integer, Timestamp> partial){
             super(new StringMessageId());
             this.partial = partial;
         }

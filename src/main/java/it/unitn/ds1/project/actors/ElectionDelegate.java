@@ -5,7 +5,6 @@ import it.unitn.ds1.project.TimeoutManager;
 import it.unitn.ds1.project.Timestamp;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -27,9 +26,9 @@ public class ElectionDelegate {
         startElection(new HashMap<>());
     }
 
-    void startElection(Map<Integer, List<Timestamp>> partial) {
+    void startElection(Map<Integer, Timestamp> partial) {
         partial = new HashMap<>(partial);
-        partial.put(replica.getId(), replica.getUpdateHistory());
+        partial.put(replica.getId(), replica.getLatestUpdate());
         ReplicaElection toSend = new ReplicaElection(partial);
         tellNext(toSend);
         timeoutManager.startTimeout(toSend, ELECTION_ACK_TIMEOUT_MS, new ReplicaNextDead(partial));
@@ -42,44 +41,37 @@ public class ElectionDelegate {
     void onReplicaElectionMsg(ReplicaElection msg) {
         replica.cancelHeartbeat();
         replica.getSender().tell(new ReplicaElectionAck(msg.id), replica.getSelf());
-        if (msg.historyByNodeId.containsKey(replica.getId())) { //full ring trip done
-            this.pickLeader(msg.historyByNodeId);
+        if (msg.latestUpdatesByNodeId.containsKey(replica.getId())) { //full ring trip done
+            this.pickMaster(msg.latestUpdatesByNodeId);
         } else {
-            this.startElection(msg.historyByNodeId);
+            this.startElection(msg.latestUpdatesByNodeId);
         }
     }
 
-    void pickLeader(Map<Integer, List<Timestamp>> lts) {
-        int new_leader = getNewBest(lts);
-        if (replica.getId() == new_leader) {
-            replica.tellBroadcast(new MasterSync(replica.getUpdateHistory(), new_leader));
-            replica.setLatestTimestamp(replica.getLatestTimestamp().nextEpoch());
+    void pickMaster(Map<Integer, Timestamp> latestUpdatesByNodeId) {
+        int newMaster = findMostUpdatedNode(latestUpdatesByNodeId);
+        if (replica.getId() == newMaster) {
+            /*
+             *  TODO: is this the right way to update the timestamp?
+             *  MasterSync should include  anew timestamp (next epoch) or the timestamp of the latest timestamp?
+             *  Moreover, are we completing pending updates during election?
+             */
+            Timestamp newTimestamp = replica.getLatestUpdate().nextEpoch();
+            replica.tellBroadcast(new MasterSync(newTimestamp, newMaster));
+            replica.setLatestUpdate(newTimestamp);
         }
-
-        /*if(replica.GetId() == 0){
-            System.out.println("Done election");
-        }
-        replica.setMasterId(0);
-        replica.SetupHB();*/
     }
 
-    int getNewBest(Map<Integer, List<Timestamp>> lts) {
-        int best = -1;
-        Optional<Timestamp> optionalBestTs = lts.entrySet()
-                .stream()
-                .flatMap(entry -> entry.getValue().stream())
-                .max(Timestamp.COMPARATOR);
-        if (!optionalBestTs.isPresent()) {
-            // TODO: What to do if no one is the best to become the new master
+    int findMostUpdatedNode(Map<Integer, Timestamp> latestUpdatesByNodeId) {
+        Optional<Map.Entry<Integer, Timestamp>> mostUpdatedNode = latestUpdatesByNodeId
+                .entrySet()
+                .stream().max((a, b) -> Timestamp.COMPARATOR.compare(a.getValue(), b.getValue()));
+        if (mostUpdatedNode.isPresent()) {
+            return mostUpdatedNode.get().getKey();
+        } else {
+            // TODO: What to do if no one is the best to become the new master?
             return 0;
         }
-        Timestamp bestTs = optionalBestTs.get();
-        for (Map.Entry<Integer, List<Timestamp>> i_ts : lts.entrySet()) {
-            if (best < 0 && i_ts.getValue().contains(bestTs)) {
-                best = i_ts.getKey();
-            }
-        }
-        return best;
     }
 
     void onReplicaNextDead(ReplicaNextDead msg) {
@@ -89,7 +81,7 @@ public class ElectionDelegate {
     }
 
     void onMasterSyncMsg(MasterSync msg) {
-        replica.setUpdateHistory(msg.history);
+        replica.setLatestUpdate(msg.latestUpdate);
         replica.setMasterId(msg.masterId);
         replica.endElection(); // TODO: should we cancel previous heartbeat timeout?
     }

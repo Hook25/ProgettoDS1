@@ -36,8 +36,8 @@ public class TwoPhaseCommitDelegate {
             replicaActor.logMessageIgnored("non-master replica shouldn't receive messages of type ReplicaUpdate");
             return;
         }
-        Timestamp ts = replicaActor.getLatestTimestamp().nextUpdate();
-        replicaActor.setLatestTimestamp(ts);
+        Timestamp ts = replicaActor.getLatestUpdate().nextUpdate();
+        replicaActor.setLatestUpdate(ts);
         acksCount.put(ts, 0);
         replicaActor.tellBroadcast(MasterUpdate.fromReplicaUpdate(msg, ts));
     }
@@ -72,7 +72,7 @@ public class TwoPhaseCommitDelegate {
         }
         int updatedValue = updatesWaitingForOk.remove(msg.timestamp);
         replicaActor.setValue(updatedValue);
-        replicaActor.getUpdateHistory().add(msg.timestamp);
+        replicaActor.setLatestUpdate(msg.timestamp);
         replicaActor.log("update " + msg.timestamp + " " + updatedValue);
     }
 

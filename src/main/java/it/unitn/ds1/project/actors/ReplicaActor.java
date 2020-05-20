@@ -6,7 +6,6 @@ import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.TimeoutManager;
 import it.unitn.ds1.project.Timestamp;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -21,19 +20,13 @@ public class ReplicaActor extends ActorWithId {
 
     private final int id;
 
-
-    private final List<Timestamp> updateHistory = new ArrayList<>();
-
     private final TimeoutManager timeoutManager = new TimeoutManager(getSelf(), getContext().system());
 
     private final TwoPhaseCommitDelegate twoPhaseCommitDelegate = new TwoPhaseCommitDelegate(this);
     private final ElectionDelegate electionDelegate = new ElectionDelegate(this);
     private final HeartbeatDelegate heartbeatDelegate = new HeartbeatDelegate(this);
 
-    /**
-     * used only by the master
-     */
-    private Timestamp latestTimestamp = new Timestamp(0, 0);
+    private Timestamp latestUpdate = new Timestamp(0, 0);
 
     static public Props props(int id) {
         return Props.create(ReplicaActor.class, () -> new ReplicaActor(id));
@@ -120,15 +113,6 @@ public class ReplicaActor extends ActorWithId {
         this.value = value;
     }
 
-    List<Timestamp> getUpdateHistory() {
-        return updateHistory;
-    }
-
-    void setUpdateHistory(List<Timestamp> history) {
-        updateHistory.clear();
-        updateHistory.addAll(history);
-    }
-
     void setMasterId(int masterId) {
         this.masterId = masterId;
     }
@@ -137,12 +121,12 @@ public class ReplicaActor extends ActorWithId {
         return replicas;
     }
 
-    public Timestamp getLatestTimestamp() {
-        return latestTimestamp;
+    public Timestamp getLatestUpdate() {
+        return latestUpdate;
     }
 
-    public void setLatestTimestamp(Timestamp latestTimestamp) {
-        this.latestTimestamp = latestTimestamp;
+    public void setLatestUpdate(Timestamp latestUpdate) {
+        this.latestUpdate = latestUpdate;
     }
 
     void onMasterTimeoutMsg(MasterTimeout msg) {
