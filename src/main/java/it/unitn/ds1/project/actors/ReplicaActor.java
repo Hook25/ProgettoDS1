@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Function;
 
 public class ReplicaActor extends ActorWithId {
 
@@ -47,9 +46,9 @@ public class ReplicaActor extends ActorWithId {
         super("Replica", id);
         this.id = id;
     }
-    public void onCrashPlannerMsg(CrashPlanner msg){
+    public void onCrashPlannerMsg(CrashPlan msg){
         this.crashHandler.setTimestamp(msg.ts);
-        this.crashHandler.setInstanceF(msg.instanceF);
+        this.crashHandler.setCrashCriteria(msg.crashCriteria);
     }
     @Override
     public Receive createReceive() {
@@ -71,7 +70,7 @@ public class ReplicaActor extends ActorWithId {
                 .match(MasterHeartBeat.class, heartbeatDelegate::onMasterHeartBeatMsg)
                 .match(MasterTimeout.class, this::onMasterTimeoutMsg)
                 .match(HeartBeatReminder.class, heartbeatDelegate::onMasterHeartBeatReminderMsg)
-                .match(CrashPlanner.class, this::onCrashPlannerMsg)
+                .match(CrashPlan.class, this::onCrashPlannerMsg)
                 .build();
         crashHandler.setReceiver(rc);
         return receiveBuilder().matchAny(crashHandler::consume).build();

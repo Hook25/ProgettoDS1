@@ -9,7 +9,7 @@ import java.util.function.Function;
 public class Crasher {
     private Timestamp crashTime;
     private final ReplicaActor replica;
-    private Function<Object, Boolean> instanceF;
+    private Function<Object, Boolean> crashCriteria;
     private boolean crashed = false;
     private Receive receiver;
     public Crasher(ReplicaActor replica){
@@ -21,15 +21,14 @@ public class Crasher {
     public void setTimestamp(Timestamp ts){
         this.crashTime = ts;
     }
-    public void setInstanceF(Function<Object, Boolean> instanceF){
-        this.instanceF = instanceF;
+    public void setCrashCriteria(Function<Object, Boolean> crashCriteria){
+        this.crashCriteria = crashCriteria;
     }
     public void consume(Object message){
-        Timestamp ts = replica.getLatestTimestamp();
         if(crashed){ System.out.println("ignored message, I'm dead"); }
-        if(instanceF == null || crashTime == null){
+        if(crashCriteria == null || crashTime == null){
             receiver.onMessage().apply(message);
-        }else if(instanceF.apply(message) && replica.getLatestTimestamp().equals(crashTime)){
+        }else if(crashCriteria.apply(message) && replica.getLatestTimestamp().equals(crashTime)){
             crashed = true;
         }else{
             receiver.onMessage().apply(message);

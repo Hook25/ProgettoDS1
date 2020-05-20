@@ -31,16 +31,11 @@ public class Main {
 
         ActorRef client = system.actorOf(ClientActor.props(50, replicas));
 
-        Function<Object, Boolean> tmp = new Function<Object, Boolean>() {
-            @Override
-            public Boolean apply(Object o) {
-                return Messages.ClientRead.class.isInstance(o);
-            }
-        };
+        Function<Object, Boolean> crashCriteria = Messages.ClientRead.class::isInstance;
 
         System.out.println(">>> Press ENTER to crash 0 <<<");
         System.in.read();
-        replicas.get(0).tell(new Messages.CrashPlanner(new Timestamp(0,1), tmp), null);
+        replicas.get(0).tell(new Messages.CrashPlan(new Timestamp(0,1), crashCriteria), null);
         replicas.get(0).tell(new Messages.ClientRead(), client);
         //replicas.get(0).tell(new Messages.CrashPlanner(new Timestamp(1,1), tmp), null);
         System.out.println(">>> Press ENTER to write <<<");

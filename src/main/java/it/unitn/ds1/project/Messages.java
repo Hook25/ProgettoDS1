@@ -3,7 +3,6 @@ package it.unitn.ds1.project;
 import akka.actor.ActorRef;
 
 import java.io.Serializable;
-import java.sql.Time;
 import java.util.*;
 import java.util.function.Function;
 
@@ -51,12 +50,12 @@ public class Messages {
 
     }
 
-    public static class CrashPlanner implements  Serializable{
+    public static class CrashPlan implements  Serializable{
         public Timestamp ts;
-        public Function<Object, Boolean> instanceF;
-        public  CrashPlanner(Timestamp ts, Function<Object, Boolean> instanceF){
+        public Function<Object, Boolean> crashCriteria;
+        public CrashPlan(Timestamp ts, Function<Object, Boolean> crashCriteria){
             this.ts = ts;
-            this.instanceF = instanceF;
+            this.crashCriteria = crashCriteria;
         }
     }
 
