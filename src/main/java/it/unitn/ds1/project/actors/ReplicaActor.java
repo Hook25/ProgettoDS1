@@ -2,6 +2,7 @@ package it.unitn.ds1.project.actors;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import it.unitn.ds1.project.Crasher;
 import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.TimeoutManager;
 import it.unitn.ds1.project.Timestamp;
@@ -27,6 +28,7 @@ public class ReplicaActor extends ActorWithId {
     private final HeartbeatDelegate heartbeatDelegate = new HeartbeatDelegate(this);
 
     private Timestamp latestUpdate = new Timestamp(0, 0);
+    private final Crasher crashHandler = new Crasher(this);
 
     static public Props props(int id) {
         return Props.create(ReplicaActor.class, () -> new ReplicaActor(id));
@@ -37,9 +39,14 @@ public class ReplicaActor extends ActorWithId {
         this.id = id;
     }
 
+    public void onCrashPlanMsg(CrashPlan msg) {
+        this.crashHandler.setTimestamp(msg.ts);
+        this.crashHandler.setCrashCriteria(msg.crashCriteria);
+    }
+
     @Override
     public Receive createReceive() {
-        return receiveBuilder()
+        Receive rc = receiveBuilder()
                 .match(Start.class, this::onStartMsg)
                 .match(ClientRead.class, this::onClientReadMsg)
 
@@ -57,7 +64,10 @@ public class ReplicaActor extends ActorWithId {
                 .match(MasterHeartBeat.class, heartbeatDelegate::onMasterHeartBeatMsg)
                 .match(MasterTimeout.class, this::onMasterTimeoutMsg)
                 .match(HeartBeatReminder.class, heartbeatDelegate::onMasterHeartBeatReminderMsg)
+                .match(CrashPlan.class, this::onCrashPlanMsg)
                 .build();
+        crashHandler.setReceiver(rc);
+        return receiveBuilder().matchAny(crashHandler::consume).build();
     }
 
     private void onStartMsg(Start msg) {
@@ -94,11 +104,12 @@ public class ReplicaActor extends ActorWithId {
         }
     }
 
-    private void latency () {
+    private void latency() {
         try {
             Random random = ThreadLocalRandom.current();
             Thread.sleep(random.nextInt(10) + 1);
-        } catch (InterruptedException e) { }
+        } catch (InterruptedException e) {
+        }
     }
 
     void logMessageIgnored(String reason) {
@@ -133,11 +144,12 @@ public class ReplicaActor extends ActorWithId {
         heartbeatDelegate.startElection();
         electionDelegate.onMasterTimeoutMsg(msg);
     }
+
     void endElection() {
         heartbeatDelegate.endElection();
     }
 
-    void cancelHeartbeat(){
+    void cancelHeartbeat() {
         heartbeatDelegate.cancelHeartbeat();
     }
 }

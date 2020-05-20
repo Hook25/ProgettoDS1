@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.Function;
 
 public class Messages {
 
@@ -47,6 +48,16 @@ public class Messages {
 
     public static class MasterTimeout implements Serializable {
 
+    }
+
+    public static class CrashPlan implements Serializable {
+        public final Timestamp ts;
+        public final Function<Object, Boolean> crashCriteria;
+
+        public CrashPlan(Timestamp ts, Function<Object, Boolean> crashCriteria) {
+            this.ts = ts;
+            this.crashCriteria = crashCriteria;
+        }
     }
 
     public static class ClientUpdate implements Serializable {
@@ -205,10 +216,11 @@ public class Messages {
         }
     }
 
-    public static class ReplicaElectionAck extends Ack<StringMessageId>  implements Serializable {
-        public  ReplicaElectionAck(StringMessageId id){
+    public static class ReplicaElectionAck extends Ack<StringMessageId> implements Serializable {
+        public ReplicaElectionAck(StringMessageId id) {
             super(id);
         }
+
         @Override
         public String toString() {
             return "ReplicaElectionAck";
@@ -284,7 +296,7 @@ public class Messages {
 
     public static class ReplicaCheckMasterDead implements Serializable {
         @Override
-        public String toString(){
+        public String toString() {
             return "ReplicaCheckMasterDead{}";
         }
     }
@@ -296,6 +308,7 @@ public class Messages {
             super(new StringMessageId());
             this.partial = partial;
         }
+
         @Override
         public String toString() {
             return "ReplicaNextDead{}";
