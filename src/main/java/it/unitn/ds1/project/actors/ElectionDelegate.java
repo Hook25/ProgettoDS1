@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.comparingInt;
+
 public class ElectionDelegate {
 
     private static final int ELECTION_ACK_TIMEOUT_MS = 400;
@@ -65,10 +68,20 @@ public class ElectionDelegate {
     int findMostUpdatedNode(Map<Integer, Timestamp> latestUpdatesByNodeId) {
         Optional<Map.Entry<Integer, Timestamp>> mostUpdatedNode = latestUpdatesByNodeId
                 .entrySet()
-                .stream().max((a, b) -> Timestamp.COMPARATOR.compare(a.getValue(), b.getValue()));
+                .stream()
+                .max((a, b) -> {
+                    int comparison = Timestamp.COMPARATOR.compare(a.getValue(), b.getValue());
+                    if (comparison == 0) {
+                        return b.getKey() - a.getKey(); // we prefer actor lowest id
+                    } else {
+                        return comparison;
+                    }
+                });
         if (mostUpdatedNode.isPresent()) {
+            System.out.println("trovato");
             return mostUpdatedNode.get().getKey();
         } else {
+            System.out.println("non trovato");
             // TODO: What to do if no one is the best to become the new master?
             return 0;
         }
