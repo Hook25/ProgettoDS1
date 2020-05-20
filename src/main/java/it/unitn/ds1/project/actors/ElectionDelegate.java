@@ -8,9 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static java.util.Comparator.comparing;
-import static java.util.Comparator.comparingInt;
-
 public class ElectionDelegate {
 
     private static final int ELECTION_ACK_TIMEOUT_MS = 400;
@@ -26,6 +23,7 @@ public class ElectionDelegate {
     }
 
     void onMasterTimeoutMsg(MasterTimeout msg) {
+        replica.log("i've noticed master is dead. I start a new election");
         startElection(new HashMap<>());
     }
 
@@ -42,6 +40,7 @@ public class ElectionDelegate {
     }
 
     void onReplicaElectionMsg(ReplicaElection msg) {
+        replica.log("i've received an election");
         replica.cancelHeartbeat();
         replica.getSender().tell(new ReplicaElectionAck(msg.id), replica.getSelf());
         if (msg.latestUpdatesByNodeId.containsKey(replica.getId())) { //full ring trip done
@@ -62,6 +61,7 @@ public class ElectionDelegate {
             Timestamp newTimestamp = replica.getLatestUpdate().nextEpoch();
             replica.tellBroadcast(new MasterSync(newTimestamp, newMaster));
             replica.setLatestUpdate(newTimestamp);
+            replica.log("i'm the new master");
         }
     }
 
@@ -78,19 +78,17 @@ public class ElectionDelegate {
                     }
                 });
         if (mostUpdatedNode.isPresent()) {
-            System.out.println("trovato");
             return mostUpdatedNode.get().getKey();
         } else {
-            System.out.println("non trovato");
             // TODO: What to do if no one is the best to become the new master?
             return 0;
         }
     }
 
     void onReplicaNextDead(ReplicaNextDead msg) {
+        replica.log("next (" + next + ") is dead");
         bumpNext();
         startElection(msg.partial);
-        replica.log("Next is dead");
     }
 
     void onMasterSyncMsg(MasterSync msg) {

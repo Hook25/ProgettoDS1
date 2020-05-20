@@ -5,16 +5,19 @@ import akka.actor.ActorSystem;
 import it.unitn.ds1.project.actors.ClientActor;
 import it.unitn.ds1.project.actors.ReplicaActor;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.function.Function;
 
 public class Main {
 
-    private static final int N_REPLICAS = 3;
+    private static final int N_REPLICAS = 10;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         final ActorSystem system = ActorSystem.create("quorumTotalOrder");
 
         List<ActorRef> replicas = new ArrayList<>();
@@ -29,21 +32,38 @@ public class Main {
         }
 
 
+        replicas.get(0).tell(new Messages.CrashPlan(
+                new Timestamp(1, 1),
+                Messages.ReplicaUpdate.class::isInstance
+        ), null);
+
         ActorRef client = system.actorOf(ClientActor.props(50, replicas));
 
-        Function<Object, Boolean> crashCriteria = Messages.ClientRead.class::isInstance;
 
-        System.out.println(">>> Press ENTER to crash 0 <<<");
-        System.in.read();
-        replicas.get(0).tell(new Messages.CrashPlan(new Timestamp(0, 1), crashCriteria), null);
-        replicas.get(0).tell(new Messages.ClientRead(), client);
-        //replicas.get(0).tell(new Messages.CrashPlanner(new Timestamp(1,1), tmp), null);
-        System.out.println(">>> Press ENTER to write <<<");
-        System.in.read();
-        replicas.get(0).tell(new Messages.ClientUpdate(5), client);
-        replicas.get(0).tell(new Messages.ClientRead(), client);
-        System.out.println(">>> Press ENTER to exit <<<");
-        System.in.read();
+        String command;
+        Scanner scanner = new Scanner(System.in);
+        do {
+            Thread.sleep(1000);
+            System.out.println("\nType code and press ENTER");
+            System.out.println("e - Exit");
+            System.out.println("u - Update: u <value> <replica>");
+            System.out.println("r - Read: r <replica>");
+
+            command = scanner.next(".");
+            int replicaId;
+            switch (command) {
+                case "u":
+                    int value = scanner.nextInt();
+                    replicaId = scanner.nextInt();
+                    replicas.get(replicaId).tell(new Messages.ClientUpdate(value), client);
+                    break;
+                case "r":
+                    replicaId = scanner.nextInt();
+                    replicas.get(replicaId).tell(new Messages.ClientRead(), client);
+                    break;
+            }
+        } while (!"e".equals(command));
+
         system.terminate();
     }
 }

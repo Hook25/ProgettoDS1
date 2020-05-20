@@ -13,7 +13,7 @@ public abstract class ActorWithId extends AbstractActor {
         this.id = id;
     }
 
-    protected void log(String message) {
+    public void log(String message) {
         System.out.format("%s %2d %s\n", actorType, id, message);
     }
 
