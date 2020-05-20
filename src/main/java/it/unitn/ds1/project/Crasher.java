@@ -1,7 +1,6 @@
 package it.unitn.ds1.project;
 
 import akka.actor.AbstractActor.Receive;
-
 import it.unitn.ds1.project.actors.ReplicaActor;
 
 import java.util.function.Function;
@@ -11,22 +10,27 @@ public class Crasher {
     private final ReplicaActor replica;
     private Function<Object, Boolean> crashCriteria;
     private Receive receiver;
-    public Crasher(ReplicaActor replica){
+
+    public Crasher(ReplicaActor replica) {
         this.replica = replica;
     }
-    public void setReceiver(Receive receiver){
+
+    public void setReceiver(Receive receiver) {
         this.receiver = receiver;
     }
-    public void setTimestamp(Timestamp ts){
+
+    public void setTimestamp(Timestamp ts) {
         this.crashTime = ts;
     }
-    public void setCrashCriteria(Function<Object, Boolean> crashCriteria){
+
+    public void setCrashCriteria(Function<Object, Boolean> crashCriteria) {
         this.crashCriteria = crashCriteria;
     }
-    public void consume(Object message){
-        if(shouldCrash(message)) {
+
+    public void consume(Object message) {
+        if (shouldCrash(message)) {
             replica.getContext().become(crashed());
-        }else{
+        } else {
             receiver.onMessage().apply(message);
         }
     }

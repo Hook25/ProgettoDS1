@@ -35,7 +35,7 @@ public class Main {
 
         System.out.println(">>> Press ENTER to crash 0 <<<");
         System.in.read();
-        replicas.get(0).tell(new Messages.CrashPlan(new Timestamp(0,1), crashCriteria), null);
+        replicas.get(0).tell(new Messages.CrashPlan(new Timestamp(0, 1), crashCriteria), null);
         replicas.get(0).tell(new Messages.ClientRead(), client);
         //replicas.get(0).tell(new Messages.CrashPlanner(new Timestamp(1,1), tmp), null);
         System.out.println(">>> Press ENTER to write <<<");

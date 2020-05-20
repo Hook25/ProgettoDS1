@@ -46,10 +46,12 @@ public class ReplicaActor extends ActorWithId {
         super("Replica", id);
         this.id = id;
     }
-    public void onCrashPlannerMsg(CrashPlan msg){
+
+    public void onCrashPlanMsg(CrashPlan msg) {
         this.crashHandler.setTimestamp(msg.ts);
         this.crashHandler.setCrashCriteria(msg.crashCriteria);
     }
+
     @Override
     public Receive createReceive() {
         Receive rc = receiveBuilder()
@@ -70,7 +72,7 @@ public class ReplicaActor extends ActorWithId {
                 .match(MasterHeartBeat.class, heartbeatDelegate::onMasterHeartBeatMsg)
                 .match(MasterTimeout.class, this::onMasterTimeoutMsg)
                 .match(HeartBeatReminder.class, heartbeatDelegate::onMasterHeartBeatReminderMsg)
-                .match(CrashPlan.class, this::onCrashPlannerMsg)
+                .match(CrashPlan.class, this::onCrashPlanMsg)
                 .build();
         crashHandler.setReceiver(rc);
         return receiveBuilder().matchAny(crashHandler::consume).build();
@@ -110,11 +112,12 @@ public class ReplicaActor extends ActorWithId {
         }
     }
 
-    private void latency () {
+    private void latency() {
         try {
             Random random = ThreadLocalRandom.current();
             Thread.sleep(random.nextInt(10) + 1);
-        } catch (InterruptedException e) { }
+        } catch (InterruptedException e) {
+        }
     }
 
     void logMessageIgnored(String reason) {
@@ -158,11 +161,12 @@ public class ReplicaActor extends ActorWithId {
         heartbeatDelegate.startElection();
         electionDelegate.onMasterTimeoutMsg(msg);
     }
+
     void endElection() {
         heartbeatDelegate.endElection();
     }
 
-    void cancelHeartbeat(){
+    void cancelHeartbeat() {
         heartbeatDelegate.cancelHeartbeat();
     }
 }

@@ -50,10 +50,11 @@ public class Messages {
 
     }
 
-    public static class CrashPlan implements  Serializable{
-        public Timestamp ts;
-        public Function<Object, Boolean> crashCriteria;
-        public CrashPlan(Timestamp ts, Function<Object, Boolean> crashCriteria){
+    public static class CrashPlan implements Serializable {
+        public final Timestamp ts;
+        public final Function<Object, Boolean> crashCriteria;
+
+        public CrashPlan(Timestamp ts, Function<Object, Boolean> crashCriteria) {
             this.ts = ts;
             this.crashCriteria = crashCriteria;
         }
@@ -202,10 +203,11 @@ public class Messages {
         }
     }
 
-    public static class ReplicaElectionAck extends Ack<StringMessageId>  implements Serializable {
-        public  ReplicaElectionAck(StringMessageId id){
+    public static class ReplicaElectionAck extends Ack<StringMessageId> implements Serializable {
+        public ReplicaElectionAck(StringMessageId id) {
             super(id);
         }
+
         @Override
         public String toString() {
             return "ReplicaElectionAck";
@@ -281,18 +283,19 @@ public class Messages {
 
     public static class ReplicaCheckMasterDead implements Serializable {
         @Override
-        public String toString(){
+        public String toString() {
             return "ReplicaCheckMasterDead{}";
         }
     }
 
-    public static class ReplicaNextDead extends AcknowledgeableMessage<StringMessageId> implements Serializable{
+    public static class ReplicaNextDead extends AcknowledgeableMessage<StringMessageId> implements Serializable {
         public final Map<Integer, List<Timestamp>> partial;
 
-        public ReplicaNextDead(Map<Integer, List<Timestamp>> partial){
+        public ReplicaNextDead(Map<Integer, List<Timestamp>> partial) {
             super(new StringMessageId());
             this.partial = partial;
         }
+
         @Override
         public String toString() {
             return "ReplicaNextDead{}";
