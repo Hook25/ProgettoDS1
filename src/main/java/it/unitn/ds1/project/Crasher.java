@@ -10,7 +10,6 @@ public class Crasher {
     private Timestamp crashTime;
     private final ReplicaActor replica;
     private Function<Object, Boolean> crashCriteria;
-    private boolean crashed = false;
     private Receive receiver;
     public Crasher(ReplicaActor replica){
         this.replica = replica;
@@ -25,14 +24,21 @@ public class Crasher {
         this.crashCriteria = crashCriteria;
     }
     public void consume(Object message){
-        if(crashed){ System.out.println("ignored message, I'm dead"); }
-        if(crashCriteria == null || crashTime == null){
-            receiver.onMessage().apply(message);
-        }else if(crashCriteria.apply(message) && replica.getLatestTimestamp().equals(crashTime)){
-            crashed = true;
+        if(shouldCrash(message)) {
+            replica.getContext().become(crashed());
         }else{
             receiver.onMessage().apply(message);
         }
+    }
 
+    private boolean shouldCrash(Object message) {
+        return replica.getLatestTimestamp().equals(crashTime) &&
+                crashCriteria != null && crashCriteria.apply(message);
+    }
+
+    private Receive crashed() {
+        return replica.receiveBuilder()
+                .matchAny(msg -> System.out.println("ignored message, I'm dead"))
+                .build();
     }
 }
