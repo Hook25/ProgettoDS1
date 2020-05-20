@@ -42,7 +42,7 @@ public class Crasher {
 
     private Receive crashed() {
         return replica.receiveBuilder()
-                .matchAny(msg -> System.out.println("ignored message, I'm dead"))
+                .matchAny(msg -> {})
                 .build();
     }
 }
