@@ -59,8 +59,9 @@ public class ElectionDelegate {
              *  Moreover, are we completing pending updates during election?
              */
             Timestamp newTimestamp = replica.getLatestUpdate().nextEpoch();
-            replica.tellBroadcast(new MasterSync(newTimestamp, newMaster));
+            replica.setMasterTimestamp(newTimestamp);
             replica.setLatestUpdate(newTimestamp);
+            replica.tellBroadcast(new MasterSync(newTimestamp, newMaster));
             replica.log("i'm the new master");
         }
     }

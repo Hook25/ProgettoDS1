@@ -21,6 +21,11 @@ public class TwoPhaseCommitDelegate {
      */
     private final Map<Timestamp, Integer> acksCount = new HashMap<>();
 
+    /**
+     * used only by the master
+     */
+    private Timestamp masterTimestamp = new Timestamp(0, 0);
+
     public TwoPhaseCommitDelegate(ReplicaActor replicaActor) {
         this.replicaActor = replicaActor;
     }
@@ -36,14 +41,15 @@ public class TwoPhaseCommitDelegate {
             replicaActor.logMessageIgnored("non-master replica shouldn't receive messages of type ReplicaUpdate");
             return;
         }
-        Timestamp ts = replicaActor.getLatestUpdate().nextUpdate();
-        replicaActor.setLatestUpdate(ts);
-        acksCount.put(ts, 0);
-        replicaActor.tellBroadcast(MasterUpdate.fromReplicaUpdate(msg, ts));
+        masterTimestamp = masterTimestamp.nextUpdate();
+        replicaActor.setLatestUpdate(masterTimestamp);
+        acksCount.put(masterTimestamp, 0);
+        replicaActor.tellBroadcast(MasterUpdate.fromReplicaUpdate(msg, masterTimestamp));
     }
 
     void onMasterUpdateMsg(MasterUpdate msg) {
         replicaActor.getTimeoutManager().cancelTimeout(msg); // will cancel the timeout only if received by the replica that request update
+        replicaActor.log("received " + msg);
         updatesWaitingForOk.put(msg.timestamp, msg.value);
         ReplicaUpdateAck ackForMaster = ReplicaUpdateAck.fromMasterUpdate(msg);
         replicaActor.tellMaster(ackForMaster);
@@ -66,6 +72,7 @@ public class TwoPhaseCommitDelegate {
 
     void onMasterUpdateOkMsg(MasterUpdateOk msg) {
         replicaActor.getTimeoutManager().cancelTimeout(msg);
+        replicaActor.log("received " + msg);
         if (!updatesWaitingForOk.containsKey(msg.timestamp)) {
             replicaActor.logMessageIgnored("unknown update with timestamp " + msg.timestamp);
             return;
@@ -78,5 +85,9 @@ public class TwoPhaseCommitDelegate {
 
     private int getQuorum() {
         return Math.floorDiv(replicaActor.getReplicas().size(), 2) + 1;
+    }
+
+    public void setMasterTimestamp(Timestamp timestamp) {
+        masterTimestamp = timestamp;
     }
 }

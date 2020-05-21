@@ -5,13 +5,10 @@ import akka.actor.ActorSystem;
 import it.unitn.ds1.project.actors.ClientActor;
 import it.unitn.ds1.project.actors.ReplicaActor;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.util.function.Function;
 
 public class Main {
 

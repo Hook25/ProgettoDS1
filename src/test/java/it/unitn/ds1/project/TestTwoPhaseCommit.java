@@ -6,6 +6,10 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestTwoPhaseCommit extends MyAkkaTest {
 
@@ -177,6 +181,89 @@ public class TestTwoPhaseCommit extends MyAkkaTest {
             }
 
 
+        };
+    }
+
+    @Test
+    public void testMasterCrashWhenReceivingReplicaUpdate() {
+        new MyTestKit(3) {
+            {
+                CrashPlan crash = new CrashPlan(new Timestamp(0, 1), ReplicaUpdate.class::isInstance);
+                master.tell(crash, ActorRef.noSender());
+                sniffer.sendStartMsgFirstScattered();
+                within(Duration.ofSeconds(5), () -> {
+                    sniffer.expectMsgFrom(r1, MasterSync.class, master); // wait for election to finish
+
+                    master.tell(new ReplicaUpdate(5), r1);
+
+                    // r1 should have noticed that master has crashed, and should have started an election
+                    sniffer.expectMsgFrom(replicas[2], ReplicaElection.class, r1);
+                    return null;
+                });
+            }
+        };
+    }
+
+    @Test
+    public void testMasterCrashWhenReceivingReplicaUpdateAck() {
+        new MyTestKit(3) {
+            {
+                CrashPlan crash = new CrashPlan(new Timestamp(0, 1), ReplicaUpdateAck.class::isInstance);
+                master.tell(crash, ActorRef.noSender());
+                sniffer.sendStartMsgFirstScattered();
+                within(Duration.ofSeconds(5), () -> {
+                    sniffer.expectMsgFrom(r1, MasterSync.class, master); // wait for election to finish
+
+                    master.tell(new ReplicaUpdate(5), r1);
+                    sniffer.expectMsgFrom(r1, MasterUpdate.class, master);
+
+                    // r1 should have noticed that master has crashed, and should have started (or continued) an election
+                    sniffer.expectMsgFrom(replicas[2], ReplicaElection.class, r1);
+                    return null;
+                });
+            }
+        };
+    }
+
+    @Test
+    public void testConcurrentUpdates() {
+        final int N_UPDATES = 100;
+        new MyTestKit(5) {
+            {
+                sniffer.sendStartMsgFirstScattered();
+                sniffer.expectMsgFrom(r1, MasterSync.class, master); // wait for election to finish
+
+                Thread updater = new Thread(() -> {
+                    for (int i = 0; i < N_UPDATES; i++) {
+                        r1.tell(new ClientUpdate(i), client);
+                        try {
+                            Thread.sleep(ThreadLocalRandom.current().nextInt(150));
+                        } catch (InterruptedException e) {
+
+                        }
+                    }
+                });
+
+                Thread checker = new Thread(() -> {
+                    int lastReadValue = -1;
+                    do {
+                        r1.tell(new ClientRead(), client);
+                        ReplicaReadReply reply = expectMsgClass(ReplicaReadReply.class);
+                        if (reply.value < lastReadValue) {
+                            System.exit(-1);
+                        }
+                        lastReadValue = reply.value;
+                    } while (lastReadValue != N_UPDATES - 1);
+                });
+
+                checker.start();
+                updater.start();
+                try {
+                    checker.join();
+                } catch (InterruptedException e) {
+                    fail();
+                }
+            }
         };
     }
 

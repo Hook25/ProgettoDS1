@@ -93,7 +93,7 @@ public class MyAkkaTest {
 
                 if (i == 0) {
                     try {
-                        Thread.sleep(HEARTBEAT_TIMEOUT_MS - 100);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }

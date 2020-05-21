@@ -5,7 +5,7 @@ import it.unitn.ds1.project.TimeoutManager;
 
 public class HeartbeatDelegate {
 
-    private static final int HEARTBEAT_RATE_MS = 200;
+    private static final int HEARTBEAT_RATE_MS = 500;
     private static final int HEARTBEAT_TIMEOUT_T = 3; //timeout after HEARTBEAT_TIMEOUT_T * HEARTBEAT_RATE_S
     public static final int HEARTBEAT_TIMEOUT_MS = HEARTBEAT_RATE_MS * HEARTBEAT_TIMEOUT_T;
 
