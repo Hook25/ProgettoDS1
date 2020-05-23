@@ -1,9 +1,11 @@
 package it.unitn.ds1.project;
 
 import akka.actor.ActorRef;
+import it.unitn.ds1.project.actors.ReplicaActor;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class Messages {
@@ -52,9 +54,9 @@ public class Messages {
 
     public static class CrashPlan implements Serializable {
         public final Timestamp ts;
-        public final Function<Object, Boolean> crashCriteria;
+        public final BiFunction<ReplicaActor, Object, Boolean>  crashCriteria;
 
-        public CrashPlan(Timestamp ts, Function<Object, Boolean> crashCriteria) {
+        public CrashPlan(Timestamp ts, BiFunction<ReplicaActor, Object, Boolean> crashCriteria) {
             this.ts = ts;
             this.crashCriteria = crashCriteria;
         }

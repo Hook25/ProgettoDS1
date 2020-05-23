@@ -3,12 +3,13 @@ package it.unitn.ds1.project;
 import akka.actor.AbstractActor.Receive;
 import it.unitn.ds1.project.actors.ReplicaActor;
 
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class Crasher {
     private Timestamp crashTime;
     private final ReplicaActor replica;
-    private Function<Object, Boolean> crashCriteria;
+    private BiFunction<ReplicaActor, Object, Boolean> crashCriteria;
     private Receive receiver;
 
     public Crasher(ReplicaActor replica) {
@@ -23,7 +24,7 @@ public class Crasher {
         this.crashTime = ts;
     }
 
-    public void setCrashCriteria(Function<Object, Boolean> crashCriteria) {
+    public void setCrashCriteria(BiFunction<ReplicaActor, Object, Boolean> crashCriteria) {
         this.crashCriteria = crashCriteria;
     }
 
@@ -37,7 +38,7 @@ public class Crasher {
 
     private boolean shouldCrash(Object message) {
         return replica.getLatestUpdate().equals(crashTime) &&
-                crashCriteria != null && crashCriteria.apply(message);
+                crashCriteria != null && crashCriteria.apply(this.replica, message);
     }
 
     private Receive crashed() {

@@ -8,6 +8,7 @@ import it.unitn.ds1.project.actors.ReplicaActor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class Main {
@@ -31,7 +32,7 @@ public class Main {
 
         ActorRef client = system.actorOf(ClientActor.props(50, replicas));
 
-        Function<Object, Boolean> crashCriteria = Messages.ClientRead.class::isInstance;
+        BiFunction<ReplicaActor, Object, Boolean> crashCriteria = (me, msg) -> Messages.ClientRead.class.isInstance(msg);
 
         System.out.println(">>> Press ENTER to crash 0 <<<");
         System.in.read();
