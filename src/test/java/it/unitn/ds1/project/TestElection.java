@@ -152,10 +152,10 @@ public class TestElection extends MyAkkaTest {
     public void testElectionAckAndFailShouldMaster(){
         new MyTestKit(5) {
             {
-                BiFunction<ReplicaActor, Object, Boolean> crashCriteria0 = (me, msg) -> Messages.MasterSync.class.isInstance(msg);
+                BiFunction<ReplicaActor, Object, Boolean> crashCriteria0 = (me, msg) -> msg instanceof MasterSync;
                 Timestamp crashTime0 = new Timestamp(0, 1);
                 BiFunction<ReplicaActor, Object, Boolean>  crashCriteria2 = (me, msg) -> {
-                    if(Messages.ReplicaElection.class.isInstance(msg)){
+                    if(msg instanceof ReplicaElection){
                         ActorRef ar = me.getSender();
                         assert ar != null : "actor ref in getsender returned null";
                         ReplicaElection act_msg = (ReplicaElection)msg;

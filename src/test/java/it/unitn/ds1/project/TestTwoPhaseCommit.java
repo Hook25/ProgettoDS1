@@ -18,10 +18,10 @@ public class TestTwoPhaseCommit extends MyAkkaTest {
     public void clientAsksForValue() {
         new MyTestKit(2) {
             {
-                r1.tell(new Start(Arrays.asList(replicas), 5), client);
+                r1.tell(new Start(Arrays.asList(replicas)), client);
 
                 within(Duration.ofSeconds(1), () -> {
-                    expectClientToRead(r1, 5);
+                    expectClientToRead(r1, 0);
                     return null;
                 });
             }

@@ -32,18 +32,15 @@ public class Messages {
 
     public static class Start implements Serializable {
         public final List<ActorRef> replicas;
-        public final int initialValue;
 
-        public Start(List<ActorRef> replicas, int initialValue) {
+        public Start(List<ActorRef> replicas) {
             this.replicas = replicas;
-            this.initialValue = initialValue;
         }
 
         @Override
         public String toString() {
             return "Start{" +
                     "replicas=" + replicas +
-                    ", initialValue=" + initialValue +
                     '}';
         }
     }
@@ -207,10 +204,12 @@ public class Messages {
     public static class MasterSync implements Serializable {
         public final Timestamp latestUpdate;
         public final int masterId;
+        public final List<Update> history;
 
-        public MasterSync(Timestamp latestUpdate, int masterId) {
+        public MasterSync(Timestamp latestUpdate, int masterId, List<Update> history) {
             this.latestUpdate = latestUpdate;
             this.masterId = masterId;
+            this.history = Collections.unmodifiableList(new ArrayList<>(history));
         }
 
         @Override

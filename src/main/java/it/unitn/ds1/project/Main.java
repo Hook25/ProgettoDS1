@@ -24,7 +24,7 @@ public class Main {
             replicas.add(replicaI);
         }
 
-        Messages.Start startMessage = new Messages.Start(replicas, 0);
+        Messages.Start startMessage = new Messages.Start(replicas);
         for (ActorRef replica : replicas) {
             replica.tell(startMessage, null);
         }

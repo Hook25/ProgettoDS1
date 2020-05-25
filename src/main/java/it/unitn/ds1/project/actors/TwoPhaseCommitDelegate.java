@@ -2,6 +2,7 @@ package it.unitn.ds1.project.actors;
 
 import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.Timestamp;
+import it.unitn.ds1.project.Update;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +43,6 @@ public class TwoPhaseCommitDelegate {
             return;
         }
         masterTimestamp = masterTimestamp.nextUpdate();
-        replicaActor.setLatestUpdate(masterTimestamp);
         acksCount.put(masterTimestamp, 0);
         replicaActor.tellBroadcast(MasterUpdate.fromReplicaUpdate(msg, masterTimestamp));
     }
@@ -80,8 +80,7 @@ public class TwoPhaseCommitDelegate {
             return;
         }
         int updatedValue = updatesWaitingForOk.remove(msg.timestamp);
-        replicaActor.setValue(updatedValue);
-        replicaActor.setLatestUpdate(msg.timestamp);
+        replicaActor.updateValue(new Update(msg.timestamp, updatedValue));
         replicaActor.log("update " + msg.timestamp + " " + updatedValue);
     }
 

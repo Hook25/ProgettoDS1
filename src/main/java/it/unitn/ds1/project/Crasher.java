@@ -4,7 +4,6 @@ import akka.actor.AbstractActor.Receive;
 import it.unitn.ds1.project.actors.ReplicaActor;
 
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 public class Crasher {
     private Timestamp crashTime;

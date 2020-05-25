@@ -6,14 +6,16 @@ import it.unitn.ds1.project.Crasher;
 import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.TimeoutManager;
 import it.unitn.ds1.project.Timestamp;
+import it.unitn.ds1.project.Update;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class ReplicaActor extends ActorWithId {
 
-    private int value;
+    private List<Update> history = Update.initialList();
 
     private List<ActorRef> replicas;
 
@@ -27,7 +29,6 @@ public class ReplicaActor extends ActorWithId {
     private final ElectionDelegate electionDelegate = new ElectionDelegate(this);
     private final HeartbeatDelegate heartbeatDelegate = new HeartbeatDelegate(this);
 
-    private Timestamp latestUpdate = new Timestamp(0, 0);
     private final Crasher crashHandler = new Crasher(this);
 
     static public Props props(int id) {
@@ -72,7 +73,6 @@ public class ReplicaActor extends ActorWithId {
 
     private void onStartMsg(Start msg) {
         this.replicas = msg.replicas;
-        this.value = msg.initialValue;
         this.masterId = -1;
         this.heartbeatDelegate.setup();
         electionDelegate.onStartMsg(msg);
@@ -83,7 +83,7 @@ public class ReplicaActor extends ActorWithId {
     }
 
     private void onClientReadMsg(ClientRead msg) {
-        getSender().tell(new ReplicaReadReply(value), getSender());
+        getSender().tell(new ReplicaReadReply(getLatestUpdate().value), getSender());
     }
 
     boolean isMaster() {
@@ -120,8 +120,8 @@ public class ReplicaActor extends ActorWithId {
         return timeoutManager;
     }
 
-    void setValue(int value) {
-        this.value = value;
+    void updateValue(Update update) {
+        history.add(update);
     }
 
     void setMasterId(int masterId) {
@@ -132,12 +132,11 @@ public class ReplicaActor extends ActorWithId {
         return replicas;
     }
 
-    public Timestamp getLatestUpdate() {
-        return latestUpdate;
-    }
-
-    public void setLatestUpdate(Timestamp latestUpdate) {
-        this.latestUpdate = latestUpdate;
+    public Update getLatestUpdate() {
+        if(history.isEmpty()) {
+            throw new IllegalStateException("history is empty");
+        }
+        return history.get(history.size() - 1);
     }
 
     void onMasterTimeoutMsg(MasterTimeout msg) {
@@ -159,5 +158,13 @@ public class ReplicaActor extends ActorWithId {
 
     public HeartbeatDelegate getHeartbeatDelegate() {
         return heartbeatDelegate;
+    }
+
+    public List<Update> getHistory() {
+        return history;
+    }
+
+    public void setHistory(List<Update> history) {
+        this.history = new ArrayList<>(history);
     }
 }
