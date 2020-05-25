@@ -37,7 +37,7 @@ public class Crasher {
     }
 
     private boolean shouldCrash(Object message) {
-        return replica.getLatestUpdate().equals(crashTime) &&
+        return replica.getLatestUpdate().timestamp.equals(crashTime) &&
                 crashCriteria != null && crashCriteria.apply(this.replica, message);
     }
 

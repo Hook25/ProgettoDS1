@@ -52,11 +52,11 @@ public class TestElection extends MyAkkaTest {
 
         new MyTestKit(5){
             {
-                BiFunction<ReplicaActor, Object, Boolean> crashCriteria0 = (me, msg) -> Messages.MasterSync.class.isInstance(msg);
-                Timestamp crashTime0 = new Timestamp(0,1);
+                BiFunction<ReplicaActor, Object, Boolean> crashCriteria0 = (me, msg) -> msg instanceof MasterSync;
+                Timestamp crashTime0 = new Timestamp(0,0);
                 replicas[0].tell(new Messages.CrashPlan(crashTime0, crashCriteria0), null);
                 sniffer.sendStartMsg();
-                within(Duration.ofSeconds(50), ()->{
+                within(Duration.ofSeconds(10), ()->{
                     /*sniffer.expectMsgFrom(replicas[1], ReplicaElection.class, replicas[0]);
                     sniffer.expectMsgFrom(replicas[1], MasterSync.class, replicas[0]);
                     sniffer.expectMsgFrom(replicas[2], MasterSync.class, replicas[0]);*/
