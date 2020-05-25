@@ -96,7 +96,7 @@ public class ElectionDelegate {
             part += i;
         }
         replica.log("next (" + next + ") is dead, partial is: " +
-                part + "and I will " + (haveToBump ? "not" : "") + "bump");
+                part + "and I will " + (haveToBump ? "" : "not") + "bump");
         if(haveToBump) {
             bumpNext();
         }

@@ -167,4 +167,8 @@ public class ReplicaActor extends ActorWithId {
     public void setHistory(List<Update> history) {
         this.history = new ArrayList<>(history);
     }
+
+    public int getMasterId() {
+        return masterId;
+    }
 }

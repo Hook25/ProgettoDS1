@@ -1,16 +1,12 @@
 package it.unitn.ds1.project;
 
 import akka.actor.ActorRef;
-import it.unitn.ds1.project.Messages.MasterSync;
-import it.unitn.ds1.project.Messages.ReplicaElection;
-import it.unitn.ds1.project.Messages.ReplicaElectionAck;
+import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.actors.ReplicaActor;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Time;
 import java.time.Duration;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 public class TestElection extends MyAkkaTest {
 
@@ -48,22 +44,24 @@ public class TestElection extends MyAkkaTest {
      * 1 will now be elected and will send out a MasterSync
      */
     @Test
-    public void testHeartbeatTimeout(){
+    public void testHeartbeatTimeout() {
 
-        new MyTestKit(5){
+        new MyTestKit(5) {
             {
                 BiFunction<ReplicaActor, Object, Boolean> crashCriteria0 = (me, msg) -> msg instanceof MasterSync;
-                Timestamp crashTime0 = new Timestamp(0,0);
+                Timestamp crashTime0 = new Timestamp(0, 0);
                 replicas[0].tell(new Messages.CrashPlan(crashTime0, crashCriteria0), null);
                 sniffer.sendStartMsg();
-                within(Duration.ofSeconds(10), ()->{
+                within(Duration.ofSeconds(10), () -> {
+                    sniffer.waitForFirstElectionToComplete();
+
                     /*sniffer.expectMsgFrom(replicas[1], ReplicaElection.class, replicas[0]);
                     sniffer.expectMsgFrom(replicas[1], MasterSync.class, replicas[0]);
                     sniffer.expectMsgFrom(replicas[2], MasterSync.class, replicas[0]);*/
-                    sniffer.expectMsg(replicas[1], MasterSync.class);
+
                     sniffer.expectMsg(replicas[1], ReplicaElection.class);
                     sniffer.expectMsg(replicas[1], MasterSync.class);
-                    return  null;
+                    return null;
                 });
             }
         };
@@ -75,25 +73,28 @@ public class TestElection extends MyAkkaTest {
      * 1 will now be elected and will send out a MasterSync
      */
     @Test
-    public void testElectionAckTimeout(){
+    public void testElectionAckTimeout() {
         new MyTestKit(5) {
             {
-                BiFunction<ReplicaActor, Object, Boolean> crashCriteria0 = (me, msg) -> Messages.MasterSync.class.isInstance(msg);
-                Timestamp crashTime0 = new Timestamp(0, 1);
-                BiFunction<ReplicaActor, Object, Boolean>  crashCriteria2 = (me, msg) -> Messages.ReplicaElection.class.isInstance(msg);
-                Timestamp crashTime2 = new Timestamp(0, 2);
+                BiFunction<ReplicaActor, Object, Boolean> crashCriteria0 = (me, msg) -> msg instanceof MasterSync;
+                Timestamp crashTime0 = new Timestamp(0, 0);
+
+                BiFunction<ReplicaActor, Object, Boolean> crashCriteria2 = (me, msg) ->
+                        me.getMasterId() >= 0 && // first election completed
+                                msg instanceof ReplicaElection;
+                Timestamp crashTime2 = new Timestamp(0, 0);  // no update sent yet, so latest update still contain epoch 0
 
                 replicas[0].tell(new Messages.CrashPlan(crashTime0, crashCriteria0), null);
                 replicas[2].tell(new Messages.CrashPlan(crashTime2, crashCriteria2), null);
 
-                sniffer.sendStartMsg();
+                sniffer.sendStartMsgFirstScattered();
 
-                within(Duration.ofSeconds(50), () -> {
-                    sniffer.expectMsg(replicas[0], MasterSync.class);
-                    sniffer.expectMsg(replicas[1], ReplicaElection.class);
-                    //sniffer.expectMsg(replicas[1], Messages.ReplicaNextDead.class); this is broken?
-                    sniffer.expectMsg(replicas[1], ReplicaElection.class);
-                    sniffer.expectMsg(replicas[1], MasterSync.class);
+                within(Duration.ofSeconds(5), () -> {
+                    sniffer.waitForFirstElectionToComplete();
+
+                    //sniffer.expectMsg(replicas[1], ReplicaElection.class); what if 1 is the replica who starts the election?
+                    sniffer.expectMsgFrom(replicas[3], ReplicaElection.class, replicas[1]);
+                    sniffer.expectMsgFrom(replicas[3], MasterSync.class, replicas[1]);
 
                     return null;
                 });
@@ -108,32 +109,31 @@ public class TestElection extends MyAkkaTest {
      * 1 will now be elected and will send out a MasterSync
      */
     @Test
-    public void testElectionAckAndFail(){
+    public void testElectionAckAndFail() {
         new MyTestKit(5) {
             {
-                BiFunction<ReplicaActor, Object, Boolean> crashCriteria0 = (me, msg) -> Messages.MasterSync.class.isInstance(msg);
-                Timestamp crashTime0 = new Timestamp(0, 1);
-                BiFunction<ReplicaActor, Object, Boolean>  crashCriteria2 = (me, msg) -> {
-                    if(Messages.ReplicaElection.class.isInstance(msg)){
+                BiFunction<ReplicaActor, Object, Boolean> crashCriteria0 = (me, msg) -> msg instanceof MasterSync;
+                Timestamp crashTime0 = new Timestamp(0, 0);
+                BiFunction<ReplicaActor, Object, Boolean> crashCriteria2 = (me, msg) -> {
+                    if (msg instanceof ReplicaElection) {
                         ActorRef ar = me.getSender();
                         assert ar != null : "actor ref in getsender returned null";
-                        ReplicaElection act_msg = (ReplicaElection)msg;
+                        ReplicaElection act_msg = (ReplicaElection) msg;
                         ar.tell(new ReplicaElectionAck(act_msg.id), me.getSelf());
                         return true;
                     }
                     return false;
                 };
-                Timestamp crashTime2 = new Timestamp(0, 2);
+                Timestamp crashTime2 = new Timestamp(0, 0); // no update sent yet, so latest update still contain epoch 0
 
                 replicas[0].tell(new Messages.CrashPlan(crashTime0, crashCriteria0), null);
                 replicas[2].tell(new Messages.CrashPlan(crashTime2, crashCriteria2), null);
 
                 sniffer.sendStartMsg();
 
-                within(Duration.ofSeconds(50), () -> {
-                    sniffer.expectMsg(replicas[0], MasterSync.class);
+                within(Duration.ofSeconds(15), () -> {
+                    sniffer.waitForFirstElectionToComplete();
                     sniffer.expectMsg(replicas[1], ReplicaElection.class);
-                    //sniffer.expectMsg(replicas[1], Messages.ReplicaNextDead.class); this is broken?
                     sniffer.expectMsg(replicas[1], ReplicaElection.class);
                     sniffer.expectMsg(replicas[1], MasterSync.class);
                     return null;
@@ -149,16 +149,16 @@ public class TestElection extends MyAkkaTest {
      * 1 will now be elected and will send out a MasterSync
      */
     @Test
-    public void testElectionAckAndFailShouldMaster(){
+    public void testElectionAckAndFailShouldMaster() {
         new MyTestKit(5) {
             {
                 BiFunction<ReplicaActor, Object, Boolean> crashCriteria0 = (me, msg) -> msg instanceof MasterSync;
                 Timestamp crashTime0 = new Timestamp(0, 1);
-                BiFunction<ReplicaActor, Object, Boolean>  crashCriteria2 = (me, msg) -> {
-                    if(msg instanceof ReplicaElection){
+                BiFunction<ReplicaActor, Object, Boolean> crashCriteria2 = (me, msg) -> {
+                    if (msg instanceof ReplicaElection) {
                         ActorRef ar = me.getSender();
                         assert ar != null : "actor ref in getsender returned null";
-                        ReplicaElection act_msg = (ReplicaElection)msg;
+                        ReplicaElection act_msg = (ReplicaElection) msg;
                         ar.tell(new ReplicaElectionAck(act_msg.id), me.getSelf());
                         return true;
                     }

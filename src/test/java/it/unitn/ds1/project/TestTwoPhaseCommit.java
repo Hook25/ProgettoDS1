@@ -34,7 +34,7 @@ public class TestTwoPhaseCommit extends MyAkkaTest {
             {
                 sniffer.sendStartMsgFirstScattered();
                 within(Duration.ofSeconds(2), () -> {
-                    sniffer.expectMsgFrom(r1, MasterSync.class, master);  // wait for election to finish
+                    sniffer.waitForFirstElectionToComplete();
 
                     r1.tell(new ClientUpdate(5), client);
                     sniffer.expectMsgFrom(master, ReplicaUpdate.class, r1);
@@ -50,7 +50,7 @@ public class TestTwoPhaseCommit extends MyAkkaTest {
             {
                 sniffer.sendStartMsgFirstScattered();
                 within(Duration.ofSeconds(2), () -> {
-                    sniffer.expectMsgFrom(r1, MasterSync.class, master); // wait for election to finish
+                    sniffer.waitForFirstElectionToComplete();
 
                     master.tell(new ReplicaUpdate(5), r1);
                     for (ActorRef replica : replicas) {
@@ -68,7 +68,7 @@ public class TestTwoPhaseCommit extends MyAkkaTest {
             {
                 sniffer.sendStartMsgFirstScattered();
                 within(Duration.ofSeconds(2), () -> {
-                    sniffer.expectMsgFrom(r1, MasterSync.class, master); // wait for election to finish
+                    sniffer.waitForFirstElectionToComplete();
 
                     MasterUpdate mockedMasterUpdate = MasterUpdate.fromReplicaUpdate(new ReplicaUpdate(5), new Timestamp(1, 1));
 
@@ -111,7 +111,7 @@ public class TestTwoPhaseCommit extends MyAkkaTest {
                 sniffer.sendStartMsgFirstScattered();
 
                 within(Duration.ofSeconds(5), () -> {
-                    sniffer.expectMsgFrom(r1, MasterSync.class, master); // wait for election to finish
+                    sniffer.waitForFirstElectionToComplete();
 
                     r1.tell(new ClientUpdate(5), client);
 
@@ -143,7 +143,7 @@ public class TestTwoPhaseCommit extends MyAkkaTest {
                 sniffer.sendStartMsgFirstScattered();
 
                 within(Duration.ofSeconds(5), () -> {
-                    sniffer.expectMsgFrom(r1, MasterSync.class, master); // wait for election to finish
+                    sniffer.waitForFirstElectionToComplete();
 
                     r1.tell(new ClientUpdate(5), client);
 
@@ -191,7 +191,7 @@ public class TestTwoPhaseCommit extends MyAkkaTest {
                 master.tell(crash, ActorRef.noSender());
                 sniffer.sendStartMsgFirstScattered();
                 within(Duration.ofSeconds(5), () -> {
-                    sniffer.expectMsgFrom(r1, MasterSync.class, master); // wait for election to finish
+                    sniffer.waitForFirstElectionToComplete();
 
                     master.tell(new ReplicaUpdate(5), r1);
 
@@ -211,7 +211,7 @@ public class TestTwoPhaseCommit extends MyAkkaTest {
                 master.tell(crash, ActorRef.noSender());
                 sniffer.sendStartMsgFirstScattered();
                 within(Duration.ofSeconds(5), () -> {
-                    sniffer.expectMsgFrom(r1, MasterSync.class, master); // wait for election to finish
+                    sniffer.waitForFirstElectionToComplete();
 
                     master.tell(new ReplicaUpdate(5), r1);
                     sniffer.expectMsgFrom(r1, MasterUpdate.class, master);
@@ -226,17 +226,17 @@ public class TestTwoPhaseCommit extends MyAkkaTest {
 
     @Test
     public void testConcurrentUpdates() {
-        final int N_UPDATES = 100;
+        final int N_UPDATES = 50;
         new MyTestKit(5) {
             {
                 sniffer.sendStartMsgFirstScattered();
-                sniffer.expectMsgFrom(r1, MasterSync.class, master); // wait for election to finish
+                sniffer.waitForFirstElectionToComplete();
 
                 Thread updater = new Thread(() -> {
                     for (int i = 0; i < N_UPDATES; i++) {
                         r1.tell(new ClientUpdate(i), client);
                         try {
-                            Thread.sleep(ThreadLocalRandom.current().nextInt(150));
+                            Thread.sleep(ThreadLocalRandom.current().nextInt(250));
                         } catch (InterruptedException e) {
 
                         }

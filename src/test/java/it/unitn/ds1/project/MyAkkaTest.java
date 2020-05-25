@@ -61,6 +61,7 @@ public class MyAkkaTest {
             replica.tell(new Messages.ClientRead(), getRef());
             expectMsgEquals(new Messages.ReplicaReadReply(expectedValue));
         }
+
     }
 
     public class Sniffer {
@@ -99,6 +100,12 @@ public class MyAkkaTest {
                         e.printStackTrace();
                     }
                 }
+            }
+        }
+
+        protected void waitForFirstElectionToComplete(){
+            for (ActorRef replica : replicas) {
+                expectMsg(replica, Messages.MasterSync.class);
             }
         }
 
