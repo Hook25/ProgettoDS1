@@ -30,10 +30,10 @@ public class Main {
         }
 
 
-        replicas.get(0).tell(new Messages.CrashPlan(
-                new Timestamp(1, 1),
-                Messages.ReplicaUpdate.class::isInstance
-        ), null);
+        //replicas.get(0).tell(new Messages.CrashPlan(
+        //        new Timestamp(1, 1),
+        //        Messages.ReplicaUpdate.class::isInstance
+        //), null);
 
         ActorRef client = system.actorOf(ClientActor.props(50, replicas));
         BiFunction<ReplicaActor, Object, Boolean> crashCriteria = (me, msg) -> Messages.ClientRead.class.isInstance(msg);

@@ -8,6 +8,7 @@ import it.unitn.ds1.project.actors.ReplicaActor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -117,8 +118,8 @@ public class MyAkkaTest {
             List<ExpectedMessage> remainingExpectedMessages = new ArrayList<>(expectedMessages);
             TestKit probe = probeByReplica.get(receiver);
             long start = System.currentTimeMillis();
-            while (System.currentTimeMillis() - start < 3000 && !remainingExpectedMessages.isEmpty()) {
-                Object msg = probe.receiveN(1).get(0);
+            while (System.currentTimeMillis() - start < 30000 && !remainingExpectedMessages.isEmpty()) {
+                Object msg = probe.receiveN(1, Duration.ofSeconds(30)).get(0);
 
                 for (Iterator<ExpectedMessage> i = remainingExpectedMessages.iterator(); i.hasNext(); ) {
                     if (i.next().isExpectedMessage(msg, probe.getLastSender())) {

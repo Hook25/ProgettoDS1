@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public class ElectionDelegate {
 
-    private static final int ELECTION_ACK_TIMEOUT_MS = 400;
+    private static final int ELECTION_ACK_TIMEOUT_MS = 100;
 
     private final TimeoutManager timeoutManager;
     private final ReplicaActor replica;
@@ -28,11 +28,12 @@ public class ElectionDelegate {
     }
 
     void startElection(Map<Integer, Timestamp> partial) {
-        partial = new HashMap<>(partial);
-        partial.put(replica.getId(), replica.getLatestUpdate());
-        ReplicaElection toSend = new ReplicaElection(partial);
+        Map<Integer, Timestamp>  updated = new HashMap<>(partial);
+        updated.put(replica.getId(), replica.getLatestUpdate());
+        ReplicaElection toSend = new ReplicaElection(updated);
         tellNext(toSend);
-        timeoutManager.startTimeout(toSend, ELECTION_ACK_TIMEOUT_MS, new ReplicaNextDead(partial));
+        ReplicaNextDead rnd = new ReplicaNextDead(partial, next);
+        timeoutManager.startTimeout(toSend, ELECTION_ACK_TIMEOUT_MS, rnd);
     }
 
     void onReplicaElectionAckMsg(ReplicaElectionAck msg) {
@@ -40,8 +41,11 @@ public class ElectionDelegate {
     }
 
     void onReplicaElectionMsg(ReplicaElection msg) {
-        replica.log("i've received an election");
-        replica.cancelHeartbeat();
+        String inner_msgs = "Election ->";
+        for(Integer k : msg.latestUpdatesByNodeId.keySet()){
+            inner_msgs += k;
+        }
+        replica.log(inner_msgs);
         replica.getSender().tell(new ReplicaElectionAck(msg.id), replica.getSelf());
         if (msg.latestUpdatesByNodeId.containsKey(replica.getId())) { //full ring trip done
             this.pickMaster(msg.latestUpdatesByNodeId);
@@ -58,6 +62,7 @@ public class ElectionDelegate {
              *  MasterSync should include  anew timestamp (next epoch) or the timestamp of the latest timestamp?
              *  Moreover, are we completing pending updates during election?
              */
+            // replica.cancelHeartbeat(); ?
             Timestamp newTimestamp = replica.getLatestUpdate().nextEpoch();
             replica.setMasterTimestamp(newTimestamp);
             replica.setLatestUpdate(newTimestamp);
@@ -87,8 +92,16 @@ public class ElectionDelegate {
     }
 
     void onReplicaNextDead(ReplicaNextDead msg) {
-        replica.log("next (" + next + ") is dead");
-        bumpNext();
+        boolean haveToBump = msg.next == next;
+        String part = "";
+        for(Integer i : msg.partial.keySet()){
+            part += i;
+        }
+        replica.log("next (" + next + ") is dead, partial is: " +
+                part + "and I will " + (haveToBump ? "not" : "") + "bump");
+        if(haveToBump) {
+            bumpNext();
+        }
         startElection(msg.partial);
     }
 
@@ -100,7 +113,6 @@ public class ElectionDelegate {
 
 
     private void bumpNext() {
-        // TODO: this doesn't work if there is only a replica. Should we fix it?
         next = ((next + 1) % replica.getReplicas().size());
         if (replica.getId() == next) {
             this.bumpNext();
@@ -108,7 +120,7 @@ public class ElectionDelegate {
     }
 
     private void tellNext(Object msg) {
-        replica.getReplicas().get(next).tell(msg, replica.self());
+        replica.getReplicas().get(next).tell(msg, replica.getSelf());
     }
 
     public void onStartMsg(Start msg) {

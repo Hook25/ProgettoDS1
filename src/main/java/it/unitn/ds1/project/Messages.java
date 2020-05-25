@@ -309,10 +309,12 @@ public class Messages {
 
     public static class ReplicaNextDead extends AcknowledgeableMessage<StringMessageId> implements Serializable{
         public final Map<Integer, Timestamp> partial;
+        public final Integer next;
 
-        public ReplicaNextDead(Map<Integer, Timestamp> partial){
+        public ReplicaNextDead(Map<Integer, Timestamp> partial, int next){
             super(new StringMessageId());
             this.partial = partial;
+            this.next = next;
         }
 
         @Override
