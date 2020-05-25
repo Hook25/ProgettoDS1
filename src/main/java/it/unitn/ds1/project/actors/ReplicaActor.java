@@ -156,4 +156,8 @@ public class ReplicaActor extends ActorWithId {
     public void setMasterTimestamp(Timestamp timestamp) {
         twoPhaseCommitDelegate.setMasterTimestamp(timestamp);
     }
+
+    public HeartbeatDelegate getHeartbeatDelegate() {
+        return heartbeatDelegate;
+    }
 }

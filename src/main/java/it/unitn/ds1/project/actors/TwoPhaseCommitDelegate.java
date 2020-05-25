@@ -49,6 +49,7 @@ public class TwoPhaseCommitDelegate {
 
     void onMasterUpdateMsg(MasterUpdate msg) {
         replicaActor.getTimeoutManager().cancelTimeout(msg); // will cancel the timeout only if received by the replica that request update
+        replicaActor.getHeartbeatDelegate().postponeHeartBeatTimeout();
         replicaActor.log("received " + msg);
         updatesWaitingForOk.put(msg.timestamp, msg.value);
         ReplicaUpdateAck ackForMaster = ReplicaUpdateAck.fromMasterUpdate(msg);
@@ -72,6 +73,7 @@ public class TwoPhaseCommitDelegate {
 
     void onMasterUpdateOkMsg(MasterUpdateOk msg) {
         replicaActor.getTimeoutManager().cancelTimeout(msg);
+        replicaActor.getHeartbeatDelegate().postponeHeartBeatTimeout();
         replicaActor.log("received " + msg);
         if (!updatesWaitingForOk.containsKey(msg.timestamp)) {
             replicaActor.logMessageIgnored("unknown update with timestamp " + msg.timestamp);
