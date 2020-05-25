@@ -18,10 +18,10 @@ public class TestTwoPhaseCommit extends MyAkkaTest {
     public void clientAsksForValue() {
         new MyTestKit(2) {
             {
-                r1.tell(new Start(Arrays.asList(replicas), 5), client);
+                r1.tell(new Start(Arrays.asList(replicas)), client);
 
                 within(Duration.ofSeconds(1), () -> {
-                    expectClientToRead(r1, 5);
+                    expectClientToRead(r1, 0);
                     return null;
                 });
             }
@@ -46,11 +46,10 @@ public class TestTwoPhaseCommit extends MyAkkaTest {
 
     @Test
     public void masterBroadcasts_MasterUpdate_uponReceiving_ReplicaUpdate() {
-        final int N = 10;
         new MyTestKit(2) {
             {
                 sniffer.sendStartMsgFirstScattered();
-                within(Duration.ofSeconds(1), () -> {
+                within(Duration.ofSeconds(2), () -> {
                     sniffer.expectMsgFrom(r1, MasterSync.class, master); // wait for election to finish
 
                     master.tell(new ReplicaUpdate(5), r1);
@@ -68,7 +67,7 @@ public class TestTwoPhaseCommit extends MyAkkaTest {
         new MyTestKit(2) {
             {
                 sniffer.sendStartMsgFirstScattered();
-                within(Duration.ofSeconds(1), () -> {
+                within(Duration.ofSeconds(2), () -> {
                     sniffer.expectMsgFrom(r1, MasterSync.class, master); // wait for election to finish
 
                     MasterUpdate mockedMasterUpdate = MasterUpdate.fromReplicaUpdate(new ReplicaUpdate(5), new Timestamp(1, 1));

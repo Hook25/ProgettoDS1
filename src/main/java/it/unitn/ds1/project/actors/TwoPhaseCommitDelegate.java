@@ -2,6 +2,7 @@ package it.unitn.ds1.project.actors;
 
 import it.unitn.ds1.project.Messages.*;
 import it.unitn.ds1.project.Timestamp;
+import it.unitn.ds1.project.Update;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,13 +43,13 @@ public class TwoPhaseCommitDelegate {
             return;
         }
         masterTimestamp = masterTimestamp.nextUpdate();
-        replicaActor.setLatestUpdate(masterTimestamp);
         acksCount.put(masterTimestamp, 0);
         replicaActor.tellBroadcast(MasterUpdate.fromReplicaUpdate(msg, masterTimestamp));
     }
 
     void onMasterUpdateMsg(MasterUpdate msg) {
         replicaActor.getTimeoutManager().cancelTimeout(msg); // will cancel the timeout only if received by the replica that request update
+        replicaActor.getHeartbeatDelegate().postponeHeartBeatTimeout();
         replicaActor.log("received " + msg);
         updatesWaitingForOk.put(msg.timestamp, msg.value);
         ReplicaUpdateAck ackForMaster = ReplicaUpdateAck.fromMasterUpdate(msg);
@@ -72,14 +73,14 @@ public class TwoPhaseCommitDelegate {
 
     void onMasterUpdateOkMsg(MasterUpdateOk msg) {
         replicaActor.getTimeoutManager().cancelTimeout(msg);
+        replicaActor.getHeartbeatDelegate().postponeHeartBeatTimeout();
         replicaActor.log("received " + msg);
         if (!updatesWaitingForOk.containsKey(msg.timestamp)) {
             replicaActor.logMessageIgnored("unknown update with timestamp " + msg.timestamp);
             return;
         }
         int updatedValue = updatesWaitingForOk.remove(msg.timestamp);
-        replicaActor.setValue(updatedValue);
-        replicaActor.setLatestUpdate(msg.timestamp);
+        replicaActor.updateValue(new Update(msg.timestamp, updatedValue));
         replicaActor.log("update " + msg.timestamp + " " + updatedValue);
     }
 

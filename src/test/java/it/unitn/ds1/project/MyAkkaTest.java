@@ -82,7 +82,7 @@ public class MyAkkaTest {
 
         public void sendStartMsg() {
             for (ActorRef r : replicas) {
-                r.tell(new Messages.Start(forwarders, 0), ActorRef.noSender());
+                r.tell(new Messages.Start(forwarders), ActorRef.noSender());
             }
         }
 
@@ -90,7 +90,7 @@ public class MyAkkaTest {
         public void sendStartMsgFirstScattered() {
             for (int i = 0; i < replicas.length; i++) {
                 ActorRef r = replicas[i];
-                r.tell(new Messages.Start(forwarders, 0), ActorRef.noSender());
+                r.tell(new Messages.Start(forwarders), ActorRef.noSender());
 
                 if (i == 0) {
                     try {

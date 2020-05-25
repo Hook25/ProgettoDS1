@@ -28,8 +28,8 @@ public class ElectionDelegate {
     }
 
     void startElection(Map<Integer, Timestamp> partial) {
-        Map<Integer, Timestamp>  updated = new HashMap<>(partial);
-        updated.put(replica.getId(), replica.getLatestUpdate());
+        Map<Integer, Timestamp>   updated = new HashMap<>(partial);
+        updated.put(replica.getId(), replica.getLatestUpdate().timestamp);
         ReplicaElection toSend = new ReplicaElection(updated);
         tellNext(toSend);
         ReplicaNextDead rnd = new ReplicaNextDead(partial, next);
@@ -62,11 +62,9 @@ public class ElectionDelegate {
              *  MasterSync should include  anew timestamp (next epoch) or the timestamp of the latest timestamp?
              *  Moreover, are we completing pending updates during election?
              */
-            // replica.cancelHeartbeat(); ?
-            Timestamp newTimestamp = replica.getLatestUpdate().nextEpoch();
+            Timestamp newTimestamp = replica.getLatestUpdate().timestamp.nextEpoch();
             replica.setMasterTimestamp(newTimestamp);
-            replica.setLatestUpdate(newTimestamp);
-            replica.tellBroadcast(new MasterSync(newTimestamp, newMaster));
+            replica.tellBroadcast(new MasterSync(newTimestamp, newMaster, replica.getHistory()));
             replica.log("i'm the new master");
         }
     }
@@ -106,7 +104,7 @@ public class ElectionDelegate {
     }
 
     void onMasterSyncMsg(MasterSync msg) {
-        replica.setLatestUpdate(msg.latestUpdate);
+        replica.setHistory(msg.history);
         replica.setMasterId(msg.masterId);
         replica.endElection(); // TODO: should we cancel previous heartbeat timeout?
     }
