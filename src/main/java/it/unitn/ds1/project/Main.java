@@ -8,7 +8,8 @@ import it.unitn.ds1.project.actors.ReplicaActor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
+import java.util.function.BiFunction;
+
 
 public class Main {
 
@@ -35,32 +36,19 @@ public class Main {
         ), null);
 
         ActorRef client = system.actorOf(ClientActor.props(50, replicas));
+        BiFunction<ReplicaActor, Object, Boolean> crashCriteria = (me, msg) -> Messages.ClientRead.class.isInstance(msg);
 
-
-        String command;
-        Scanner scanner = new Scanner(System.in);
-        do {
-            Thread.sleep(1000);
-            System.out.println("\nType code and press ENTER");
-            System.out.println("e - Exit");
-            System.out.println("u - Update: u <value> <replica>");
-            System.out.println("r - Read: r <replica>");
-
-            command = scanner.next(".");
-            int replicaId;
-            switch (command) {
-                case "u":
-                    int value = scanner.nextInt();
-                    replicaId = scanner.nextInt();
-                    replicas.get(replicaId).tell(new Messages.ClientUpdate(value), client);
-                    break;
-                case "r":
-                    replicaId = scanner.nextInt();
-                    replicas.get(replicaId).tell(new Messages.ClientRead(), client);
-                    break;
-            }
-        } while (!"e".equals(command));
-
+        System.out.println(">>> Press ENTER to crash 0 <<<");
+        System.in.read();
+        replicas.get(0).tell(new Messages.CrashPlan(new Timestamp(0, 1), crashCriteria), null);
+        replicas.get(0).tell(new Messages.ClientRead(), client);
+        //replicas.get(0).tell(new Messages.CrashPlanner(new Timestamp(1,1), tmp), null);
+        System.out.println(">>> Press ENTER to write <<<");
+        System.in.read();
+        replicas.get(0).tell(new Messages.ClientUpdate(5), client);
+        replicas.get(0).tell(new Messages.ClientRead(), client);
+        System.out.println(">>> Press ENTER to exit <<<");
+        System.in.read();
         system.terminate();
     }
 }
