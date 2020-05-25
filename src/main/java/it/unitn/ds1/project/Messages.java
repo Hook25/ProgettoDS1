@@ -60,6 +60,10 @@ public class Messages {
             this.ts = ts;
             this.crashCriteria = crashCriteria;
         }
+
+        public CrashPlan(Timestamp ts, Function<Object, Boolean> crashCriteria) {
+            this(ts, (receiver, msg) -> crashCriteria.apply(msg));
+        }
     }
 
     public static class ClientUpdate implements Serializable {

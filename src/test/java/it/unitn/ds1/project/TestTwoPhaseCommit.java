@@ -33,7 +33,7 @@ public class TestTwoPhaseCommit extends MyAkkaTest {
         new MyTestKit(2) {
             {
                 sniffer.sendStartMsgFirstScattered();
-                within(Duration.ofSeconds(1), () -> {
+                within(Duration.ofSeconds(2), () -> {
                     sniffer.expectMsgFrom(r1, MasterSync.class, master);  // wait for election to finish
 
                     r1.tell(new ClientUpdate(5), client);
