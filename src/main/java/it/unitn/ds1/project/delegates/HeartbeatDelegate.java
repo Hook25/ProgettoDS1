@@ -1,14 +1,13 @@
-package it.unitn.ds1.project.actors;
+package it.unitn.ds1.project.delegates;
 
-import it.unitn.ds1.project.Messages;
-import it.unitn.ds1.project.TimeoutManager;
+import it.unitn.ds1.project.models.Messages;
+import it.unitn.ds1.project.managers.TimeoutManager;
+import it.unitn.ds1.project.actors.ReplicaActor;
+
+import static it.unitn.ds1.project.managers.Timeout.HEARTBEAT_RATE_MS;
+import static it.unitn.ds1.project.managers.Timeout.HEARTBEAT_TIMEOUT_MS;
 
 public class HeartbeatDelegate {
-
-    private static final int HEARTBEAT_RATE_MS = 50;
-    private static final int HEARTBEAT_TIMEOUT_T = 3; //timeout after HEARTBEAT_TIMEOUT_T * HEARTBEAT_RATE_S
-    public static final int HEARTBEAT_TIMEOUT_MS = HEARTBEAT_RATE_MS * HEARTBEAT_TIMEOUT_T;
-
     private final ReplicaActor replica;
     private final TimeoutManager timeoutManager;
 
@@ -39,23 +38,23 @@ public class HeartbeatDelegate {
         postponeHeartBeatTimeout();
     }
 
-    void endElection() {
+    public void endElection() {
         this.setupHeartBeat();
     }
 
-    void setup() {
+    public void setup() {
         this.setupHeartBeat();
     }
 
-    void startElection() {
+    public void startElection() {
         timeoutManager.cancelTimeout(new Messages.MasterHeartBeat());
     }
 
-    void onMasterHeartBeatReminderMsg(Messages.HeartBeatReminder msg) {
+    public void onMasterHeartBeatReminderMsg(Messages.HeartBeatReminder msg) {
         replica.tellBroadcast(new Messages.MasterHeartBeat());
     }
 
-    void cancelHeartbeat() {
+    public void cancelHeartbeat() {
         timeoutManager.cancelTimeout(new Messages.MasterHeartBeat());
     }
 

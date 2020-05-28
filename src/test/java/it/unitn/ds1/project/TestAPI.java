@@ -5,6 +5,7 @@ import akka.actor.ActorSystem;
 import akka.testkit.TestActor;
 import akka.testkit.javadsl.TestKit;
 import it.unitn.ds1.project.actors.ReplicaActor;
+import it.unitn.ds1.project.models.Messages;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -12,10 +13,9 @@ import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static it.unitn.ds1.project.actors.HeartbeatDelegate.HEARTBEAT_TIMEOUT_MS;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class MyAkkaTest {
+public class TestAPI {
     protected ActorSystem system;
 
     @BeforeEach

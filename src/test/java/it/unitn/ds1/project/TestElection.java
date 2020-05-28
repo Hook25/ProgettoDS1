@@ -1,14 +1,16 @@
 package it.unitn.ds1.project;
 
 import akka.actor.ActorRef;
-import it.unitn.ds1.project.Messages.*;
+import it.unitn.ds1.project.models.Messages;
+import it.unitn.ds1.project.models.Messages.*;
 import it.unitn.ds1.project.actors.ReplicaActor;
+import it.unitn.ds1.project.models.Timestamp;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.function.BiFunction;
 
-public class TestElection extends MyAkkaTest {
+public class TestElection extends TestAPI {
 
     @Test
     public void testNominal() {

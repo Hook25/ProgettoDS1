@@ -1,17 +1,17 @@
-package it.unitn.ds1.project.actors;
+package it.unitn.ds1.project.delegates;
 
-import it.unitn.ds1.project.Messages.*;
-import it.unitn.ds1.project.TimeoutManager;
-import it.unitn.ds1.project.Timestamp;
+import it.unitn.ds1.project.models.Messages.*;
+import it.unitn.ds1.project.managers.TimeoutManager;
+import it.unitn.ds1.project.models.Timestamp;
+import it.unitn.ds1.project.actors.ReplicaActor;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static it.unitn.ds1.project.managers.Timeout.ELECTION_ACK_TIMEOUT_MS;
+
 public class ElectionDelegate {
-
-    private static final int ELECTION_ACK_TIMEOUT_MS = 100;
-
     private final TimeoutManager timeoutManager;
     private final ReplicaActor replica;
 
@@ -22,12 +22,12 @@ public class ElectionDelegate {
         timeoutManager = replica.getTimeoutManager();
     }
 
-    void onMasterTimeoutMsg(MasterTimeout msg) {
+    public void onMasterTimeoutMsg(MasterTimeout msg) {
         replica.log("i've noticed master is dead. I start a new election");
         startElection(new HashMap<>());
     }
 
-    void startElection(Map<Integer, Timestamp> partial) {
+    public void startElection(Map<Integer, Timestamp> partial) {
         Map<Integer, Timestamp>   updated = new HashMap<>(partial);
         updated.put(replica.getId(), replica.getLatestUpdate().timestamp);
         ReplicaElection toSend = new ReplicaElection(updated);
@@ -36,11 +36,11 @@ public class ElectionDelegate {
         timeoutManager.startTimeout(toSend, ELECTION_ACK_TIMEOUT_MS, rnd);
     }
 
-    void onReplicaElectionAckMsg(ReplicaElectionAck msg) {
+    public void onReplicaElectionAckMsg(ReplicaElectionAck msg) {
         timeoutManager.cancelTimeout(msg);
     }
 
-    void onReplicaElectionMsg(ReplicaElection msg) {
+    public void onReplicaElectionMsg(ReplicaElection msg) {
         String inner_msgs = "Election ->";
         for(Integer k : msg.latestUpdatesByNodeId.keySet()){
             inner_msgs += k;
@@ -54,7 +54,7 @@ public class ElectionDelegate {
         }
     }
 
-    void pickMaster(Map<Integer, Timestamp> latestUpdatesByNodeId) {
+    public void pickMaster(Map<Integer, Timestamp> latestUpdatesByNodeId) {
         int newMaster = findMostUpdatedNode(latestUpdatesByNodeId);
         if (replica.getId() == newMaster) {
             /*
@@ -69,7 +69,7 @@ public class ElectionDelegate {
         }
     }
 
-    int findMostUpdatedNode(Map<Integer, Timestamp> latestUpdatesByNodeId) {
+    public int findMostUpdatedNode(Map<Integer, Timestamp> latestUpdatesByNodeId) {
         Optional<Map.Entry<Integer, Timestamp>> mostUpdatedNode = latestUpdatesByNodeId
                 .entrySet()
                 .stream()
@@ -89,7 +89,7 @@ public class ElectionDelegate {
         }
     }
 
-    void onReplicaNextDead(ReplicaNextDead msg) {
+    public void onReplicaNextDead(ReplicaNextDead msg) {
         boolean haveToBump = msg.next == next;
         String part = "";
         for(Integer i : msg.partial.keySet()){
@@ -103,7 +103,7 @@ public class ElectionDelegate {
         startElection(msg.partial);
     }
 
-    void onMasterSyncMsg(MasterSync msg) {
+    public void onMasterSyncMsg(MasterSync msg) {
         replica.setHistory(msg.history);
         replica.setMasterId(msg.masterId);
         replica.endElection(); // TODO: should we cancel previous heartbeat timeout?

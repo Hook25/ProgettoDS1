@@ -2,11 +2,14 @@ package it.unitn.ds1.project.actors;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import it.unitn.ds1.project.Crasher;
-import it.unitn.ds1.project.Messages.*;
-import it.unitn.ds1.project.TimeoutManager;
-import it.unitn.ds1.project.Timestamp;
-import it.unitn.ds1.project.Update;
+import it.unitn.ds1.project.managers.CrashManager;
+import it.unitn.ds1.project.models.Messages.*;
+import it.unitn.ds1.project.managers.TimeoutManager;
+import it.unitn.ds1.project.models.Timestamp;
+import it.unitn.ds1.project.models.Update;
+import it.unitn.ds1.project.delegates.ElectionDelegate;
+import it.unitn.ds1.project.delegates.HeartbeatDelegate;
+import it.unitn.ds1.project.delegates.TwoPhaseCommitDelegate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +32,7 @@ public class ReplicaActor extends ActorWithId {
     private final ElectionDelegate electionDelegate = new ElectionDelegate(this);
     private final HeartbeatDelegate heartbeatDelegate = new HeartbeatDelegate(this);
 
-    private final Crasher crashHandler = new Crasher(this);
+    private final CrashManager crashHandler = new CrashManager(this);
 
     static public Props props(int id) {
         return Props.create(ReplicaActor.class, () -> new ReplicaActor(id));
@@ -86,18 +89,18 @@ public class ReplicaActor extends ActorWithId {
         getSender().tell(new ReplicaReadReply(getLatestUpdate().value), getSender());
     }
 
-    boolean isMaster() {
+    public boolean isMaster() {
         return id == masterId;
     }
 
-    void tellMaster(Object message) {
+    public void tellMaster(Object message) {
         if (masterId >= 0) {
             latency();
             replicas.get(masterId).tell(message, getSelf());
         }
     }
 
-    void tellBroadcast(Object message) {
+    public void tellBroadcast(Object message) {
         for (ActorRef replica : replicas) {
             latency();
             replica.tell(message, getSelf());
@@ -112,19 +115,19 @@ public class ReplicaActor extends ActorWithId {
         }
     }
 
-    void logMessageIgnored(String reason) {
+    public void logMessageIgnored(String reason) {
         log("ignored message: " + reason);
     }
 
-    TimeoutManager getTimeoutManager() {
+    public TimeoutManager getTimeoutManager() {
         return timeoutManager;
     }
 
-    void updateValue(Update update) {
+    public void updateValue(Update update) {
         history.add(update);
     }
 
-    void setMasterId(int masterId) {
+    public void setMasterId(int masterId) {
         this.masterId = masterId;
     }
 
@@ -144,11 +147,11 @@ public class ReplicaActor extends ActorWithId {
         electionDelegate.onMasterTimeoutMsg(msg);
     }
 
-    void endElection() {
+    public void endElection() {
         heartbeatDelegate.endElection();
     }
 
-    void cancelHeartbeat() {
+    public void cancelHeartbeat() {
         heartbeatDelegate.cancelHeartbeat();
     }
 

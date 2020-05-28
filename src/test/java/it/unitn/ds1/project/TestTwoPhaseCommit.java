@@ -1,17 +1,17 @@
 package it.unitn.ds1.project;
 
 import akka.actor.ActorRef;
-import it.unitn.ds1.project.Messages.*;
+import it.unitn.ds1.project.models.Messages.*;
+import it.unitn.ds1.project.models.Timestamp;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class TestTwoPhaseCommit extends MyAkkaTest {
+public class TestTwoPhaseCommit extends TestAPI {
 
 
     @Test

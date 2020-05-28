@@ -1,4 +1,4 @@
-package it.unitn.ds1.project;
+package it.unitn.ds1.project.models;
 
 import java.util.ArrayList;
 import java.util.Collections;

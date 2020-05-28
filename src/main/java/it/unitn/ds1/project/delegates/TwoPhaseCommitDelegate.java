@@ -1,18 +1,17 @@
-package it.unitn.ds1.project.actors;
+package it.unitn.ds1.project.delegates;
 
-import it.unitn.ds1.project.Messages.*;
-import it.unitn.ds1.project.Timestamp;
-import it.unitn.ds1.project.Update;
+import it.unitn.ds1.project.actors.ReplicaActor;
+import it.unitn.ds1.project.models.Messages.*;
+import it.unitn.ds1.project.models.Timestamp;
+import it.unitn.ds1.project.models.Update;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static it.unitn.ds1.project.managers.Timeout.MASTER_UPDATE_OK_TIMEOUT;
+import static it.unitn.ds1.project.managers.Timeout.MASTER_UPDATE_TIMEOUT;
+
 public class TwoPhaseCommitDelegate {
-
-    private static final int MASTER_UPDATE_TIMEOUT = 400;
-
-    private static final int MASTER_UPDATE_OK_TIMEOUT = 400;
-
     private final ReplicaActor replicaActor;
 
     private final Map<Timestamp, Integer> updatesWaitingForOk = new HashMap<>();
@@ -31,13 +30,13 @@ public class TwoPhaseCommitDelegate {
         this.replicaActor = replicaActor;
     }
 
-    void onClientUpdateMsg(ClientUpdate msg) {
+    public void onClientUpdateMsg(ClientUpdate msg) {
         ReplicaUpdate forwardedMessage = ReplicaUpdate.fromClientUpdate(msg);
         replicaActor.tellMaster(forwardedMessage);
         replicaActor.getTimeoutManager().startTimeout(forwardedMessage, MASTER_UPDATE_TIMEOUT, new MasterTimeout());
     }
 
-    void onReplicaUpdateMsg(ReplicaUpdate msg) {
+    public void onReplicaUpdateMsg(ReplicaUpdate msg) {
         if (!replicaActor.isMaster()) {
             replicaActor.logMessageIgnored("non-master replica shouldn't receive messages of type ReplicaUpdate");
             return;
@@ -47,7 +46,7 @@ public class TwoPhaseCommitDelegate {
         replicaActor.tellBroadcast(MasterUpdate.fromReplicaUpdate(msg, masterTimestamp));
     }
 
-    void onMasterUpdateMsg(MasterUpdate msg) {
+    public void onMasterUpdateMsg(MasterUpdate msg) {
         replicaActor.getTimeoutManager().cancelTimeout(msg); // will cancel the timeout only if received by the replica that request update
         replicaActor.getHeartbeatDelegate().postponeHeartBeatTimeout();
         replicaActor.log("received " + msg);
@@ -57,7 +56,7 @@ public class TwoPhaseCommitDelegate {
         replicaActor.getTimeoutManager().startTimeout(ackForMaster, MASTER_UPDATE_OK_TIMEOUT, new MasterTimeout());
     }
 
-    void onReplicaUpdateAckMsg(ReplicaUpdateAck msg) {
+    public void onReplicaUpdateAckMsg(ReplicaUpdateAck msg) {
         if (!replicaActor.isMaster()) {
             replicaActor.logMessageIgnored("non-master replica shouldn't receive messages of type ReplicaUpdateAck");
             return;
@@ -71,7 +70,7 @@ public class TwoPhaseCommitDelegate {
         }
     }
 
-    void onMasterUpdateOkMsg(MasterUpdateOk msg) {
+    public void onMasterUpdateOkMsg(MasterUpdateOk msg) {
         replicaActor.getTimeoutManager().cancelTimeout(msg);
         replicaActor.getHeartbeatDelegate().postponeHeartBeatTimeout();
         replicaActor.log("received " + msg);

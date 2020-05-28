@@ -1,12 +1,12 @@
-package it.unitn.ds1.project;
+package it.unitn.ds1.project.managers;
 
 import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Cancellable;
-import it.unitn.ds1.project.Messages.Ack;
-import it.unitn.ds1.project.Messages.AcknowledgeableMessage;
-import it.unitn.ds1.project.Messages.MessageId;
+import it.unitn.ds1.project.models.Messages.Ack;
+import it.unitn.ds1.project.models.Messages.AcknowledgeableMessage;
+import it.unitn.ds1.project.models.Messages.MessageId;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 

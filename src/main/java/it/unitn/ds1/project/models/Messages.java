@@ -1,4 +1,4 @@
-package it.unitn.ds1.project;
+package it.unitn.ds1.project.models;
 
 import akka.actor.ActorRef;
 import it.unitn.ds1.project.actors.ReplicaActor;

@@ -1,17 +1,18 @@
-package it.unitn.ds1.project;
+package it.unitn.ds1.project.managers;
 
 import akka.actor.AbstractActor.Receive;
 import it.unitn.ds1.project.actors.ReplicaActor;
+import it.unitn.ds1.project.models.Timestamp;
 
 import java.util.function.BiFunction;
 
-public class Crasher {
+public class CrashManager {
     private Timestamp crashTime;
     private final ReplicaActor replica;
     private BiFunction<ReplicaActor, Object, Boolean> crashCriteria;
     private Receive receiver;
 
-    public Crasher(ReplicaActor replica) {
+    public CrashManager(ReplicaActor replica) {
         this.replica = replica;
     }
 
