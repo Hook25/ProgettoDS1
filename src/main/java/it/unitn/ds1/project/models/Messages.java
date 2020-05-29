@@ -101,24 +101,22 @@ public class Messages {
 
     public static class MasterUpdate extends Ack<StringMessageId> implements Serializable {
 
-        public final int value;
+        public final Update update;
 
-        public final Timestamp timestamp;
-
-        private MasterUpdate(StringMessageId acknowledgedId, int value, Timestamp timestamp) {
-            super(acknowledgedId);
-            this.value = value;
-            this.timestamp = timestamp;
-        }
 
         public static MasterUpdate fromReplicaUpdate(ReplicaUpdate msg, Timestamp t) {
-            return new MasterUpdate(msg.id, msg.value, t);
+            return new MasterUpdate(msg.id,new Update(t, msg.value));
+        }
+
+        private MasterUpdate(StringMessageId acknowledgedId, Update update) {
+            super(acknowledgedId);
+            this.update = update;
         }
 
         @Override
         public String toString() {
             return "MasterUpdate{" +
-                    "value=" + value +
+                    "update=" + update +
                     '}';
         }
     }
@@ -132,7 +130,7 @@ public class Messages {
         }
 
         public static ReplicaUpdateAck fromMasterUpdate(MasterUpdate msg) {
-            return new ReplicaUpdateAck(msg.timestamp);
+            return new ReplicaUpdateAck(msg.update.timestamp);
         }
 
         @Override

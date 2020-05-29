@@ -50,7 +50,7 @@ public class TwoPhaseCommitDelegate {
         replicaActor.getTimeoutManager().cancelTimeout(msg); // will cancel the timeout only if received by the replica that request update
         replicaActor.getHeartbeatDelegate().postponeHeartBeatTimeout();
         replicaActor.log("received " + msg);
-        updatesWaitingForOk.put(msg.timestamp, msg.value);
+        updatesWaitingForOk.put(msg.update.timestamp, msg.update.value);
         ReplicaUpdateAck ackForMaster = ReplicaUpdateAck.fromMasterUpdate(msg);
         replicaActor.tellMaster(ackForMaster);
         replicaActor.getTimeoutManager().startTimeout(ackForMaster, MASTER_UPDATE_OK_TIMEOUT, new MasterTimeout());
