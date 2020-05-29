@@ -299,13 +299,6 @@ public class Messages {
         }
     }
 
-    public static class ReplicaCheckMasterDead implements Serializable {
-        @Override
-        public String toString() {
-            return "ReplicaCheckMasterDead{}";
-        }
-    }
-
     public static class ReplicaNextDead extends AcknowledgeableMessage<StringMessageId> implements Serializable{
         public final Map<Integer, Timestamp> partial;
         public final Integer next;
