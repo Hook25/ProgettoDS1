@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static it.unitn.ds1.project.managers.Timeout.ELECTION_ACK_TIMEOUT_MS;
+import static it.unitn.ds1.project.managers.Timeouts.ELECTION_ACK_TIMEOUT_MS;
 
 public class ElectionDelegate {
     private final TimeoutManager timeoutManager;

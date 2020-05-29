@@ -8,8 +8,8 @@ import it.unitn.ds1.project.models.Update;
 import java.util.HashMap;
 import java.util.Map;
 
-import static it.unitn.ds1.project.managers.Timeout.MASTER_UPDATE_OK_TIMEOUT;
-import static it.unitn.ds1.project.managers.Timeout.MASTER_UPDATE_TIMEOUT;
+import static it.unitn.ds1.project.managers.Timeouts.MASTER_UPDATE_OK_TIMEOUT;
+import static it.unitn.ds1.project.managers.Timeouts.MASTER_UPDATE_TIMEOUT;
 
 public class TwoPhaseCommitDelegate {
     private final ReplicaActor replicaActor;

@@ -1,6 +1,6 @@
 package it.unitn.ds1.project.managers;
 
-public abstract class Timeout {
+public abstract class Timeouts {
     public static final int ELECTION_ACK_TIMEOUT_MS = 100;
 
     public static final int HEARTBEAT_RATE_MS = 600;

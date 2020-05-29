@@ -4,8 +4,8 @@ import it.unitn.ds1.project.models.Messages;
 import it.unitn.ds1.project.managers.TimeoutManager;
 import it.unitn.ds1.project.actors.ReplicaActor;
 
-import static it.unitn.ds1.project.managers.Timeout.HEARTBEAT_RATE_MS;
-import static it.unitn.ds1.project.managers.Timeout.HEARTBEAT_TIMEOUT_MS;
+import static it.unitn.ds1.project.managers.Timeouts.HEARTBEAT_RATE_MS;
+import static it.unitn.ds1.project.managers.Timeouts.HEARTBEAT_TIMEOUT_MS;
 
 public class HeartbeatDelegate {
     private final ReplicaActor replica;
