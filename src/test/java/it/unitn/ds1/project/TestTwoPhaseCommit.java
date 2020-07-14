@@ -80,30 +80,6 @@ public class TestTwoPhaseCommit extends TestAPI {
         };
     }
 
-//    @Test
-//    public void masterBroadcasts_MasterUpdateOk_uponReachingQuorum() {
-//        final int N = 5;
-//        final int QUORUM = Math.floorDiv(N, 2) + 1;
-//        new TestKit(system){{
-//            ActorRef master = system.actorOf(ReplicaActor.props(0));
-//
-//            List<ActorRef> mockedReplicas = new ArrayList<>();
-//            for(int i = 0; i < N; i++) {
-//                mockedReplicas.add(new TestKit(system).getRef());
-//            }
-//
-//            master.tell(new Start(mockedReplicas, 0), ActorRef.noSender());
-//            master.tell(new MasterSync(Collections.emptyList(), 0), ActorRef.noSender());
-//
-//            master.tell(new ReplicaUpdate(5), ActorRef.noSender());
-//
-//            for (int i = 0; i < QUORUM; i++) {
-//                master.tell(ReplicaUpdateAck.fromMasterUpdate(blabla), ActorRef.noSender());
-//            }
-//            // TODO: finisci
-//        }};
-//    }
-
     @Test
     public void clientAsksForUpdateAndThenAsksForValue_2replicas() {
         new MyTestKit(2) {
@@ -152,7 +128,6 @@ public class TestTwoPhaseCommit extends TestAPI {
                     sniffer.expectMsgInAnyOrder(master, Arrays.asList(
                             ExpectedMessage.ofClass(MasterUpdate.class),
 
-                            // TODO: rewrite this code without repeating the statement 10 times
                             ExpectedMessage.ofClass(ReplicaUpdateAck.class),
                             ExpectedMessage.ofClass(ReplicaUpdateAck.class),
                             ExpectedMessage.ofClass(ReplicaUpdateAck.class),

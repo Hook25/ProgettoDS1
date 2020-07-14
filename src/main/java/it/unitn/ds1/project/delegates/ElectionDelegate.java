@@ -59,7 +59,7 @@ public class ElectionDelegate {
         if (replica.getId() == newMaster) {
             /*
              *  TODO: is this the right way to update the timestamp?
-             *  MasterSync should include  anew timestamp (next epoch) or the timestamp of the latest timestamp?
+             *  MasterSync should include a new timestamp (next epoch) or the timestamp of the latest timestamp?
              *  Moreover, are we completing pending updates during election?
              */
             Timestamp newTimestamp = replica.getLatestUpdate().timestamp.nextEpoch();
@@ -85,6 +85,7 @@ public class ElectionDelegate {
             return mostUpdatedNode.get().getKey();
         } else {
             // TODO: What to do if no one is the best to become the new master?
+            // This should happen only at the beginning of the protocol, when there is no master and no updates
             return 0;
         }
     }
