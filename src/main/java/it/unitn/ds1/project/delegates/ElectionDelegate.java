@@ -28,7 +28,7 @@ public class ElectionDelegate {
     }
 
     public void startElection(Map<Integer, Timestamp> partial) {
-        Map<Integer, Timestamp>   updated = new HashMap<>(partial);
+        Map<Integer, Timestamp> updated = new HashMap<>(partial);
         updated.put(replica.getId(), replica.getLatestUpdate().timestamp);
         ReplicaElection toSend = new ReplicaElection(updated);
         tellNext(toSend);
@@ -43,7 +43,9 @@ public class ElectionDelegate {
     public void onReplicaElectionMsg(ReplicaElection msg) {
         replica.log(msg.toString());
         replica.getSender().tell(new ReplicaElectionAck(msg.id), replica.getSelf());
-        if (msg.latestUpdatesByNodeId.containsKey(replica.getId())) { //full ring trip done
+        if (replica.isMaster()) {
+            // I'm the master and I'm still alive, no need to continue election
+        } else if (msg.latestUpdatesByNodeId.containsKey(replica.getId())) { //full ring trip done
             this.pickMaster(msg.latestUpdatesByNodeId, msg);
         } else {
             this.startElection(msg.latestUpdatesByNodeId);
@@ -63,7 +65,7 @@ public class ElectionDelegate {
             replica.setMasterId(newMaster);
             replica.tellBroadcast(new MasterSync(newTimestamp, newMaster, replica.getHistory()));
             replica.log("i'm the new master");
-        }else if(!replica.isMaster()){
+        } else if (!replica.isMaster()) {
             replica.getReplicas().get(newMaster).tell(election_msg, replica.getSelf());
         }
     }
@@ -91,12 +93,12 @@ public class ElectionDelegate {
     public void onReplicaNextDead(ReplicaNextDead msg) {
         boolean haveToBump = msg.next == next;
         String part = "";
-        for(Integer i : msg.partial.keySet()){
+        for (Integer i : msg.partial.keySet()) {
             part += i;
         }
         replica.log("next (" + next + ") is dead, partial is: " +
                 part + "and I will " + (haveToBump ? "" : "not") + "bump");
-        if(haveToBump) {
+        if (haveToBump) {
             bumpNext();
         }
         startElection(msg.partial);

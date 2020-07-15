@@ -31,7 +31,7 @@ public class CrashManager {
     public void consume(Object message) {
         if (shouldCrash(message)) {
             replica.getContext().become(crashed());
-            replica.log("crashed");
+            replica.log("CRASHED");
         } else {
             receiver.onMessage().apply(message);
         }

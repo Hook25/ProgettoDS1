@@ -162,7 +162,7 @@ public class TestTwoPhaseCommit extends TestAPI {
     public void testMasterCrashWhenReceivingReplicaUpdate() {
         new MyTestKit(3) {
             {
-                CrashPlan crash = new CrashPlan(new Timestamp(0, 1), ReplicaUpdate.class::isInstance);
+                CrashPlan crash = new CrashPlan(new Timestamp(0, 0), ReplicaUpdate.class::isInstance);
                 master.tell(crash, ActorRef.noSender());
                 sniffer.sendStartMsgFirstScattered();
                 within(Duration.ofSeconds(5), () -> {
@@ -182,7 +182,7 @@ public class TestTwoPhaseCommit extends TestAPI {
     public void testMasterCrashWhenReceivingReplicaUpdateAck() {
         new MyTestKit(3) {
             {
-                CrashPlan crash = new CrashPlan(new Timestamp(0, 1), ReplicaUpdateAck.class::isInstance);
+                CrashPlan crash = new CrashPlan(new Timestamp(0, 0), ReplicaUpdateAck.class::isInstance);
                 master.tell(crash, ActorRef.noSender());
                 sniffer.sendStartMsgFirstScattered();
                 within(Duration.ofSeconds(5), () -> {

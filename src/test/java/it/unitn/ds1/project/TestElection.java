@@ -136,7 +136,6 @@ public class TestElection extends TestAPI {
                 within(Duration.ofSeconds(15), () -> {
                     sniffer.waitForFirstElectionToComplete();
                     sniffer.expectMsg(replicas[1], ReplicaElection.class);
-                    sniffer.expectMsg(replicas[1], ReplicaElection.class);
                     sniffer.expectMsg(replicas[1], MasterSync.class);
                     return null;
                 });

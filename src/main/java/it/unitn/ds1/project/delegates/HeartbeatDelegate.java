@@ -20,13 +20,14 @@ public class HeartbeatDelegate {
         if (replica.isMaster()) {
             setupMasterHeartBeat();
         } else {
-            setupTimeoutNextHeartBeat();
+            postponeHeartBeatTimeout();
         }
     }
 
     private void setupMasterHeartBeat() {
         TimeoutManager.scheduleAtFixedRate(replica, HEARTBEAT_RATE_MS, new Messages.HeartBeatReminder());
     }
+
 
     private void setupTimeoutNextHeartBeat() {
         Messages.AcknowledgeableMessage<Messages.MessageId> waitHeartBeat = new Messages.AcknowledgeableMessage<Messages.MessageId>(Messages.StringMessageId.heartbeat()) {
