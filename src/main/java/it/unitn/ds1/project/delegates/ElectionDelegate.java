@@ -44,15 +44,15 @@ public class ElectionDelegate {
         replica.log(msg.toString());
         replica.getSender().tell(new ReplicaElectionAck(msg.id), replica.getSelf());
         if (msg.latestUpdatesByNodeId.containsKey(replica.getId())) { //full ring trip done
-            this.pickMaster(msg.latestUpdatesByNodeId);
+            this.pickMaster(msg.latestUpdatesByNodeId, msg);
         } else {
             this.startElection(msg.latestUpdatesByNodeId);
         }
     }
 
-    public void pickMaster(Map<Integer, Timestamp> latestUpdatesByNodeId) {
+    public void pickMaster(Map<Integer, Timestamp> latestUpdatesByNodeId, ReplicaElection election_msg) {
         int newMaster = findMostUpdatedNode(latestUpdatesByNodeId);
-        if (replica.getId() == newMaster) {
+        if (replica.getId() == newMaster && !replica.isMaster()) {
             /*
              *  TODO: is this the right way to update the timestamp?
              *  MasterSync should include a new timestamp (next epoch) or the timestamp of the latest timestamp?
@@ -60,8 +60,11 @@ public class ElectionDelegate {
              */
             Timestamp newTimestamp = replica.getLatestUpdate().timestamp.nextEpoch();
             replica.setMasterTimestamp(newTimestamp);
+            replica.setMasterId(newMaster);
             replica.tellBroadcast(new MasterSync(newTimestamp, newMaster, replica.getHistory()));
             replica.log("i'm the new master");
+        }else if(!replica.isMaster()){
+            replica.getReplicas().get(newMaster).tell(election_msg, replica.getSelf());
         }
     }
 
