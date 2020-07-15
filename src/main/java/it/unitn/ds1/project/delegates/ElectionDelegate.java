@@ -41,11 +41,7 @@ public class ElectionDelegate {
     }
 
     public void onReplicaElectionMsg(ReplicaElection msg) {
-        String inner_msgs = "Election -> ";
-        for(Integer k : msg.latestUpdatesByNodeId.keySet()){
-            inner_msgs += k;
-        }
-        replica.log(inner_msgs);
+        replica.log(msg.toString());
         replica.getSender().tell(new ReplicaElectionAck(msg.id), replica.getSelf());
         if (msg.latestUpdatesByNodeId.containsKey(replica.getId())) { //full ring trip done
             this.pickMaster(msg.latestUpdatesByNodeId);
@@ -84,7 +80,6 @@ public class ElectionDelegate {
         if (mostUpdatedNode.isPresent()) {
             return mostUpdatedNode.get().getKey();
         } else {
-            // TODO: What to do if no one is the best to become the new master?
             // This should happen only at the beginning of the protocol, when there is no master and no updates
             return 0;
         }
@@ -107,7 +102,7 @@ public class ElectionDelegate {
     public void onMasterSyncMsg(MasterSync msg) {
         replica.setHistory(msg.history);
         replica.setMasterId(msg.masterId);
-        replica.endElection(); // TODO: should we cancel previous heartbeat timeout?
+        replica.endElection();
     }
 
 

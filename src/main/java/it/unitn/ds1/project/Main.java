@@ -43,11 +43,9 @@ public class Main {
         startUpdatingClient(nodeId++, replicas, system);
 
         ActorRef client = system.actorOf(ClientActor.props(nodeId++, replicas));
-        BiFunction<ReplicaActor, Object, Boolean> crashCriteria = (me, msg) -> msg instanceof Messages.ClientRead;
 
-        System.out.println(">>> Press ENTER to crash 0 <<<");
-        System.in.read();
-        replicas.get(0).tell(new Messages.CrashPlan(new Timestamp(0, 1), crashCriteria), null);
+        BiFunction<ReplicaActor, Object, Boolean> crashCriteria = (me, msg) -> true;
+        replicas.get(0).tell(new Messages.CrashPlan(new Timestamp(3, 1), crashCriteria), null);
         replicas.get(0).tell(new Messages.ClientRead(), client);
         System.out.println(">>> Press ENTER to write <<<");
         System.in.read();

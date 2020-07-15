@@ -193,9 +193,9 @@ public class Messages {
 
         @Override
         public String toString() {
-            return "ReplicaElection{" +
-                    "historyByNodeId=" + latestUpdatesByNodeId +
-                    '}';
+            StringBuilder s = new StringBuilder("Election -> ");
+            latestUpdatesByNodeId.keySet().forEach(s::append);
+            return s.toString();
         }
     }
 
