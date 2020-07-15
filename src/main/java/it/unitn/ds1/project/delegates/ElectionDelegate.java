@@ -41,7 +41,7 @@ public class ElectionDelegate {
     }
 
     public void onReplicaElectionMsg(ReplicaElection msg) {
-        String inner_msgs = "Election ->";
+        String inner_msgs = "Election -> ";
         for(Integer k : msg.latestUpdatesByNodeId.keySet()){
             inner_msgs += k;
         }

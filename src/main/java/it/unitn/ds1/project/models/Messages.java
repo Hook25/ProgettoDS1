@@ -51,7 +51,7 @@ public class Messages {
 
     public static class CrashPlan implements Serializable {
         public final Timestamp ts;
-        public final BiFunction<ReplicaActor, Object, Boolean>  crashCriteria;
+        public final BiFunction<ReplicaActor, Object, Boolean> crashCriteria;
 
         public CrashPlan(Timestamp ts, BiFunction<ReplicaActor, Object, Boolean> crashCriteria) {
             this.ts = ts;
@@ -105,7 +105,7 @@ public class Messages {
 
 
         public static MasterUpdate fromReplicaUpdate(ReplicaUpdate msg, Timestamp t) {
-            return new MasterUpdate(msg.id,new Update(t, msg.value));
+            return new MasterUpdate(msg.id, new Update(t, msg.value));
         }
 
         private MasterUpdate(StringMessageId acknowledgedId, Update update) {
@@ -297,11 +297,11 @@ public class Messages {
         }
     }
 
-    public static class ReplicaNextDead extends AcknowledgeableMessage<StringMessageId> implements Serializable{
+    public static class ReplicaNextDead extends AcknowledgeableMessage<StringMessageId> implements Serializable {
         public final Map<Integer, Timestamp> partial;
         public final Integer next;
 
-        public ReplicaNextDead(Map<Integer, Timestamp> partial, int next){
+        public ReplicaNextDead(Map<Integer, Timestamp> partial, int next) {
             super(new StringMessageId());
             this.partial = partial;
             this.next = next;
@@ -310,6 +310,24 @@ public class Messages {
         @Override
         public String toString() {
             return "ReplicaNextDead{}";
+        }
+    }
+
+    public static class ReminderClientRead implements Serializable {
+        public final int replicaId;
+
+        public ReminderClientRead(int replicaId) {
+            this.replicaId = replicaId;
+        }
+    }
+
+    public static class ReminderClientUpdate implements Serializable {
+        public final int replicaId;
+        public final int value;
+
+        public ReminderClientUpdate(int replicaId, int value) {
+            this.replicaId = replicaId;
+            this.value = value;
         }
     }
 }
