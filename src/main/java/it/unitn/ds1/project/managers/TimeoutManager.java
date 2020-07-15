@@ -12,6 +12,7 @@ import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -62,18 +63,13 @@ public class TimeoutManager {
     }
 
     public void cancelAllExceptMasterHeartBeat() {
-        Cancellable heartbeatCancellable = null;
-        for (Map.Entry<MessageId, Cancellable> entry : timeouts.entrySet()) {
+        Iterator<Map.Entry<MessageId, Cancellable>> iter = timeouts.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry<MessageId, Cancellable> entry = iter.next();
             if (!entry.getKey().equals(StringMessageId.heartbeat())) {
                 entry.getValue().cancel();
-            } else {
-                heartbeatCancellable = entry.getValue();
+                iter.remove();
             }
-        }
-
-        timeouts.clear();
-        if (heartbeatCancellable != null) {
-            timeouts.put(StringMessageId.heartbeat(), heartbeatCancellable);
         }
     }
 }
