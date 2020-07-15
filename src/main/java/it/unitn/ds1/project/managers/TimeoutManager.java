@@ -4,6 +4,7 @@ import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Cancellable;
+import it.unitn.ds1.project.models.Messages.StringMessageId;
 import it.unitn.ds1.project.models.Messages.Ack;
 import it.unitn.ds1.project.models.Messages.AcknowledgeableMessage;
 import it.unitn.ds1.project.models.Messages.MessageId;
@@ -60,4 +61,19 @@ public class TimeoutManager {
         );
     }
 
+    public void cancelAllExceptMasterHeartBeat() {
+        Cancellable heartbeatCancellable = null;
+        for (Map.Entry<MessageId, Cancellable> entry : timeouts.entrySet()) {
+            if (!entry.getKey().equals(StringMessageId.heartbeat())) {
+                entry.getValue().cancel();
+            } else {
+                heartbeatCancellable = entry.getValue();
+            }
+        }
+
+        timeouts.clear();
+        if (heartbeatCancellable != null) {
+            timeouts.put(StringMessageId.heartbeat(), heartbeatCancellable);
+        }
+    }
 }

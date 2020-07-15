@@ -13,6 +13,7 @@ import it.unitn.ds1.project.delegates.TwoPhaseCommitDelegate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -169,5 +170,9 @@ public class ReplicaActor extends ActorWithId {
 
     public int getMasterId() {
         return masterId;
+    }
+
+    public Map<Timestamp, Integer> getUpdatesWaitingForOk() {
+        return twoPhaseCommitDelegate.getUpdatesWaitingForOk();
     }
 }

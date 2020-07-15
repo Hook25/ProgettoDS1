@@ -184,12 +184,17 @@ public class Messages {
 
     public static class ReplicaElection extends AcknowledgeableMessage<StringMessageId> implements Serializable {
         public final Map<Integer, Timestamp> latestUpdatesByNodeId;
+        public final Map<Timestamp, Integer> updatesWaitingForOk;
 
-        public ReplicaElection(Map<Integer, Timestamp> latestUpdatesByNodeId) {
-            super(new StringMessageId());
-            this.latestUpdatesByNodeId = Collections.unmodifiableMap(new HashMap<>(latestUpdatesByNodeId));
+        public ReplicaElection() {
+            this(new HashMap<>(), new HashMap<>());
         }
 
+        public ReplicaElection(Map<Integer, Timestamp> latestUpdatesByNodeId, Map<Timestamp, Integer> updatesWaitingForOk) {
+            super(new StringMessageId());
+            this.latestUpdatesByNodeId = Collections.unmodifiableMap(new HashMap<>(latestUpdatesByNodeId));
+            this.updatesWaitingForOk = Collections.unmodifiableMap(new HashMap<>(updatesWaitingForOk));
+        }
 
         @Override
         public String toString() {
@@ -298,10 +303,10 @@ public class Messages {
     }
 
     public static class ReplicaNextDead extends AcknowledgeableMessage<StringMessageId> implements Serializable {
-        public final Map<Integer, Timestamp> partial;
+        public final ReplicaElection partial;
         public final Integer next;
 
-        public ReplicaNextDead(Map<Integer, Timestamp> partial, int next) {
+        public ReplicaNextDead(ReplicaElection partial, int next) {
             super(new StringMessageId());
             this.partial = partial;
             this.next = next;

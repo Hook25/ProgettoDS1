@@ -5,6 +5,7 @@ import it.unitn.ds1.project.managers.TimeoutManager;
 import it.unitn.ds1.project.models.Timestamp;
 import it.unitn.ds1.project.actors.ReplicaActor;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -24,16 +25,21 @@ public class ElectionDelegate {
 
     public void onMasterTimeoutMsg(MasterTimeout msg) {
         replica.log("i've noticed master is dead. I start a new election");
-        startElection(new HashMap<>());
+        startElection(new ReplicaElection());
     }
 
-    public void startElection(Map<Integer, Timestamp> partial) {
-        Map<Integer, Timestamp> updated = new HashMap<>(partial);
-        updated.put(replica.getId(), replica.getLatestUpdate().timestamp);
-        ReplicaElection toSend = new ReplicaElection(updated);
-        tellNext(toSend);
+    public void startElection(ReplicaElection partial) {
+        Map<Integer, Timestamp> updatedHistory = new HashMap<>(partial.latestUpdatesByNodeId);
+        updatedHistory.put(replica.getId(), replica.getLatestUpdate().timestamp);
+
+        Map<Timestamp, Integer> updatedPartial = new HashMap<>(partial.updatesWaitingForOk);
+        replica.getUpdatesWaitingForOk().forEach(updatedPartial::putIfAbsent);
+        ReplicaElection updated = new ReplicaElection(updatedHistory, updatedPartial);
+
+        tellNext(updated);
+        timeoutManager.cancelAllExceptMasterHeartBeat();
         ReplicaNextDead rnd = new ReplicaNextDead(partial, next);
-        timeoutManager.startTimeout(toSend, ELECTION_ACK_TIMEOUT_MS, rnd);
+        timeoutManager.startTimeout(updated, ELECTION_ACK_TIMEOUT_MS, rnd);
     }
 
     public void onReplicaElectionAckMsg(ReplicaElectionAck msg) {
@@ -46,40 +52,41 @@ public class ElectionDelegate {
         if (replica.isMaster()) {
             // I'm the master and I'm still alive, no need to continue election
         } else if (msg.latestUpdatesByNodeId.containsKey(replica.getId())) { //full ring trip done
-            this.pickMaster(msg.latestUpdatesByNodeId, msg);
+            this.pickMaster(msg);
         } else {
-            this.startElection(msg.latestUpdatesByNodeId);
+            this.startElection(msg);
         }
     }
 
-    public void pickMaster(Map<Integer, Timestamp> latestUpdatesByNodeId, ReplicaElection election_msg) {
-        int newMaster = findMostUpdatedNode(latestUpdatesByNodeId);
+    public void pickMaster(ReplicaElection electionMsg) {
+        int newMaster = findMostUpdatedNode(electionMsg);
         if (replica.getId() == newMaster && !replica.isMaster()) {
-            /*
-             *  TODO: is this the right way to update the timestamp?
-             *  MasterSync should include a new timestamp (next epoch) or the timestamp of the latest timestamp?
-             *  Moreover, are we completing pending updates during election?
-             */
+
             Timestamp newTimestamp = replica.getLatestUpdate().timestamp.nextEpoch();
             replica.setMasterTimestamp(newTimestamp);
             replica.setMasterId(newMaster);
             replica.tellBroadcast(new MasterSync(newTimestamp, newMaster, replica.getHistory()));
             replica.log("i'm the new master");
+
+            if(!electionMsg.updatesWaitingForOk.isEmpty()) {
+                Timestamp latestPendingUpdateTimestamp = Collections.max(electionMsg.updatesWaitingForOk.keySet());
+                replica.self().tell(new ReplicaUpdate(electionMsg.updatesWaitingForOk.get(latestPendingUpdateTimestamp)), replica.self());
+            }
         } else if (!replica.isMaster()) {
-            replica.getReplicas().get(newMaster).tell(election_msg, replica.getSelf());
+            replica.getReplicas().get(newMaster).tell(electionMsg, replica.getSelf());
         }
     }
 
-    public int findMostUpdatedNode(Map<Integer, Timestamp> latestUpdatesByNodeId) {
-        Optional<Map.Entry<Integer, Timestamp>> mostUpdatedNode = latestUpdatesByNodeId
+    public int findMostUpdatedNode(ReplicaElection electionMsg) {
+        Optional<Map.Entry<Integer, Timestamp>> mostUpdatedNode = electionMsg.latestUpdatesByNodeId
                 .entrySet()
                 .stream()
                 .max((a, b) -> {
-                    int comparison = Timestamp.COMPARATOR.compare(a.getValue(), b.getValue());
-                    if (comparison == 0) {
+                    int historyComparison = Timestamp.COMPARATOR.compare(a.getValue(), b.getValue());
+                    if (historyComparison == 0) {
                         return b.getKey() - a.getKey(); // we prefer actor lowest id
                     } else {
-                        return comparison;
+                        return historyComparison;
                     }
                 });
         if (mostUpdatedNode.isPresent()) {
@@ -93,7 +100,7 @@ public class ElectionDelegate {
     public void onReplicaNextDead(ReplicaNextDead msg) {
         boolean haveToBump = msg.next == next;
         String part = "";
-        for (Integer i : msg.partial.keySet()) {
+        for (Integer i : msg.partial.latestUpdatesByNodeId.keySet()) {
             part += i;
         }
         replica.log("next (" + next + ") is dead, partial is: " +

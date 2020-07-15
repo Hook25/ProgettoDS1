@@ -90,4 +90,8 @@ public class TwoPhaseCommitDelegate {
     public void setMasterTimestamp(Timestamp timestamp) {
         masterTimestamp = timestamp;
     }
+
+    public Map<Timestamp, Integer> getUpdatesWaitingForOk() {
+        return updatesWaitingForOk;
+    }
 }
