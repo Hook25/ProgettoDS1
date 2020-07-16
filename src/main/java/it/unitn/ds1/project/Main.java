@@ -39,12 +39,12 @@ public class Main {
 
 
         nodeId = 50;
-        //startReadingClient(nodeId++, replicas, system);
+        startReadingClient(nodeId++, replicas, system);
         startUpdatingClient(nodeId++, replicas, system);
 
         ActorRef client = system.actorOf(ClientActor.props(nodeId++, replicas));
 
-        replicas.get(0).tell(new Messages.CrashPlan(new Timestamp(3, 1), (me, msg) -> true), null);
+        replicas.get(0).tell(new Messages.CrashPlan(new Timestamp(2, 1), (me, msg) -> true), null);
         replicas.get(0).tell(new Messages.ClientRead(), client);
         System.out.println(">>> Press ENTER to write <<<");
         System.in.read();
@@ -61,9 +61,9 @@ public class Main {
      */
     private static void startReadingClient(int id, List<ActorRef> replicas, ActorSystem system) {
         ActorRef client = system.actorOf(ClientActor.props(id, replicas));
-        FiniteDuration duration = Duration.create(100, TimeUnit.MILLISECONDS);
+        FiniteDuration duration = Duration.create(1000, TimeUnit.MILLISECONDS);
         system.scheduler().scheduleAtFixedRate(
-                duration,
+                Duration.create(1000, TimeUnit.MILLISECONDS),
                 duration,
                 () -> client.tell(new Messages.ReminderClientRead(1), ActorRef.noSender()),
                 system.dispatcher()
@@ -76,12 +76,12 @@ public class Main {
      */
     private static void startUpdatingClient(int id, List<ActorRef> replicas, ActorSystem system) {
         ActorRef client = system.actorOf(ClientActor.props(id, replicas));
-        FiniteDuration duration = Duration.create(1000, TimeUnit.MILLISECONDS);
+        FiniteDuration duration = Duration.create(5000, TimeUnit.MILLISECONDS);
         // here we use an atomic integer because we need an effective final variable,
         // otherwise we cannot use it inside the lambda.
-        AtomicInteger value = new AtomicInteger(1);
+        AtomicInteger value = new AtomicInteger(0);
         system.scheduler().scheduleAtFixedRate(
-                duration,
+                Duration.create(3000, TimeUnit.MILLISECONDS),
                 duration,
                 () -> client.tell(new Messages.ReminderClientUpdate(1, value.incrementAndGet()), ActorRef.noSender()),
                 system.dispatcher()

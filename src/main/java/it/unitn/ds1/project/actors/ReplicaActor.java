@@ -70,6 +70,7 @@ public class ReplicaActor extends ActorWithId {
                 .match(MasterTimeout.class, this::onMasterTimeoutMsg)
                 .match(HeartBeatReminder.class, heartbeatDelegate::onMasterHeartBeatReminderMsg)
                 .match(CrashPlan.class, this::onCrashPlanMsg)
+                .matchAny((m) -> log("unrecognized message " + m))
                 .build();
         crashHandler.setReceiver(rc);
         return receiveBuilder().matchAny(crashHandler::consume).build();
